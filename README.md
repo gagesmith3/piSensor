@@ -1,1 +1,1 @@
-Python script for utilizing the %%%% metal sensor and send data to a mysql database on a timed loop
+Python script for utilizing the data from a 3 wire pmv sensor and upload it to a mysql database
