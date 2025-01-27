@@ -31,6 +31,7 @@ def detectMetal():
    global count
    global downTime
    global upTime
+   global status
    if(GPIOpin != -1):
      newState = GPIO.input(GPIOpin)
      if newState != oldState:
@@ -38,18 +39,26 @@ def detectMetal():
          count+=1
          print(count)
          oldState=newState
+         upTime+=1
+         status = 'ACTIVE'
        else:
          oldState=newState
      else:
        downTime+=1
-       print(downTime)
-
+       status = 'INACTIVE'
    else:
      print("Please Initial Input Ports")
 
 #sendUpTime
-def sendUpTime():
-  print("UPTIME")
+def sendStatus():
+  global mysqli
+  global mycursor
+  global status
+  sql = "UPDATE heading_data SET headStatus = %s WHERE headID = %s"
+  val = (status, '10')
+  mycursor.execute(sql,val)
+  mysqli.commit()
+  print("Header Status Updated")
 
 
 #sendData
@@ -61,7 +70,6 @@ def sendData():
   myDate = x.strftime("%x")
   myHour = x.strftime("%H")
   myMin = x.strftime("%M")
-  mycursor=mysqli.cursor()
   sql = "INSERT INTO heading_rates (headName, studCount, updateFullDate, updateDate, updateHour, updateMinute) VALUES (%s, %s, %s, %s, %s, %s)"
   val = ("TEST2", count, x, myDate, myHour, myMin)
   mycursor.execute(sql,val)
@@ -77,12 +85,13 @@ if __name__ == '__main__':
   count = -1
   upTime = 0
   downTime = 0
-  mysqli = 'test'
-  mycursor = 'test'
+  mysqli = 'mysqli'
+  mycursor = 'mycursor'
+  status = 'INACTIVE'
   initialInductive(pin)
   oldState = 2
-  schedule.every(1).minutes.do(sendData)
-  schedule.every(1).minutes.do(sendUpTime)
+  #schedule.every(1).minutes.do(sendData)
+  schedule.every(1).minutes.do(sendStatus)
   print("Count Sequence Started")
   while True:
     detectMetal()
