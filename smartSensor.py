@@ -1,3 +1,4 @@
+#version 2.1
 import time
 import RPi.GPIO as GPIO
 import mysql.connector
