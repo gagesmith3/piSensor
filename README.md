@@ -1,1 +1,9 @@
-Python script for utilizing the data from a 3 wire pmv sensor and upload it to a mysql database
+Description
+This repo contains files used to read metal sensing data and write the data to a mysql database
+
+File Breakdown
+sensor.py
+
+crontab.txt
+
+Other(s)
