@@ -51,6 +51,12 @@ def sendData():
   val = ("TESTING7", count, x, myDate, myHour, myMin)
   mycursor.execute(sql,val)
   mysqli.commit()
+  if count>0:
+    sql2 = "UPDATE heading_data SET headStatus = 'ACTIVE' WHERE headID = 10"
+  else:
+    sql2 = "UPDATE heading_data SET headStatus = 'INACTIVE' WHERE headID = 10"
+  mycursor.execute(sql2)
+  mysqli.commit()
   count = 0
 
 
