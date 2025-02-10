@@ -33,6 +33,7 @@ def detectMetal():
    else:
      print("Please Initial Input Ports")
 
+
 #sendData
 def sendData():
   mysqli=mysql.connector.connect(
@@ -40,21 +41,20 @@ def sendData():
         user='webapp',
         password='STUDS2650',
         database='iwt_db')
-
-  global count
+    global count
   x = datetime.datetime.now()
   myDate = x.strftime("%x")
   myHour = x.strftime("%H")
   myMin = x.strftime("%M")
   mycursor=mysqli.cursor()
   sql = "INSERT INTO heading_rates (headName, studCount, updateFullDate, updateDate, updateHour, updateMinute) VALUES (%s, %s, %s, %s, %s, %s)"
-  val = ("TESTING7", count, x, myDate, myHour, myMin)
+  val = ("NATIONAL_3", count, x, myDate, myHour, myMin)
   mycursor.execute(sql,val)
   mysqli.commit()
   if count>0:
-    sql2 = "UPDATE heading_data SET headStatus = 'ACTIVE' WHERE headID = 10"
+    sql2 = "UPDATE heading_data SET headStatus = 'ACTIVE' WHERE headID = 3"
   else:
-    sql2 = "UPDATE heading_data SET headStatus = 'INACTIVE' WHERE headID = 10"
+    sql2 = "UPDATE heading_data SET headStatus = 'INACTIVE' WHERE headID = 3"
   mycursor.execute(sql2)
   mysqli.commit()
   count = 0
@@ -70,5 +70,3 @@ if __name__ == '__main__':
   while True:
     detectMetal()
     schedule.run_pending()
-
-
