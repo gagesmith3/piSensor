@@ -1,8 +1,10 @@
+#version 3.1
 import time
 import RPi.GPIO as GPIO
 import mysql.connector
 import schedule
 import datetime
+import os
 
 # Pin of Input
 GPIOpin = -1
@@ -14,8 +16,6 @@ def initialInductive(pin):
   GPIO.setmode(GPIO.BCM)
   GPIO.setup(GPIOpin,GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
   print("Finished Initiation")
-  print(GPIOpin)
-
 
 # Detect Metal
 def detectMetal():
@@ -41,24 +41,27 @@ def sendData():
         user='webapp',
         password='STUDS2650',
         database='iwt_db')
-    global count
+  global count
   x = datetime.datetime.now()
   myDate = x.strftime("%x")
-  myHour = x.strftime("%H")
-  myMin = x.strftime("%M")
-  mycursor=mysqli.cursor()
-  sql = "INSERT INTO heading_rates (headName, studCount, updateFullDate, updateDate, updateHour, updateMinute) VALUES (%s, %s, %s, %s, %s, %s)"
-  val = ("NATIONAL_3", count, x, myDate, myHour, myMin)
-  mycursor.execute(sql,val)
-  mysqli.commit()
-  if count>0:
-    sql2 = "UPDATE heading_data SET headStatus = 'ACTIVE' WHERE headID = 3"
-  else:
-    sql2 = "UPDATE heading_data SET headStatus = 'INACTIVE' WHERE headID = 3"
-  mycursor.execute(sql2)
-  mysqli.commit()
-  count = 0
-
+  myHour = x.hour
+  myMin = x.minute
+  if myHour>=7 and myHour<=17:
+    mycursor=mysqli.cursor()
+    sql = "INSERT INTO heading_rates (headName, studCount, updateFullDate, updateDate, updateHour, updateMinute) VALUES (%s, %s, %s, %s, %s, %s)"
+    val = ("NATIONAL_1", count, x, myDate, myHour, myMin)
+    mycursor.execute(sql,val)
+    mysqli.commit()
+    if count>0:
+      sql2 = "UPDATE heading_data SET headStatus = 'ACTIVE' WHERE headID = 1"
+    else:
+      sql2 = "UPDATE heading_data SET headStatus = 'INACTIVE' WHERE headID = 1"
+    mycursor.execute(sql2)
+    mysqli.commit()
+    count = 0
+    print('Data Sent')
+  if myHour==23 and myMin==59:
+    os.system('sudo reboot')
 
 # test module
 if __name__ == '__main__':
