@@ -66,7 +66,7 @@ def sendData():
 # test module
 if __name__ == '__main__':
   pin = 17
-  count = -1
+  count = 0
   oldState = 2
   initialInductive(pin)
   schedule.every(1).minutes.do(sendData)
