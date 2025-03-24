@@ -21,4 +21,4 @@
 # For more information see the manual pages of crontab(5) and cron(8)
 #
 # m h  dom mon dow   command
-@reboot /home/gage-iwt/Desktop/testing/venv/bin/python3 /home/gage-iwt/Desktop/testing/venv/bin/sensorSmart.py
+@reboot /home/gage-iwt/Desktop/sensor/venv/bin/python3 /home/gage-iwt/Desktop/sensor/venv/bin/sensor.py
