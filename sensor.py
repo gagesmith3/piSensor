@@ -65,6 +65,15 @@ def sendData():
 
 # test module
 if __name__ == '__main__':
+  mysqli=mysql.connector.connect(
+    host='192.168.1.6',
+    user='webapp',
+    password='STUDS2650',
+    database='iwt_db')
+  mycursor=mysqli.cursor()
+  sql = "UPDATE heading_data SET headerAlarm = 'FALSE' WHERE headID = 8"
+  mycursor.execute(sql)
+  mysqli.commit()
   pin = 17
   count = 0
   oldState = 2
