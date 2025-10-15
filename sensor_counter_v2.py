@@ -144,7 +144,7 @@ class SensorCounter:
             progress_percent = 0
         
         # Progress bar dimensions (moved left to make room for percentage)
-        bar_x = 20
+        bar_x = 50
         bar_y = 4
         bar_width = 45
         bar_height = 5
@@ -183,42 +183,21 @@ class SensorCounter:
             # Status bar
             self.draw_status_bar(draw)
             
-            # Live count - tall and narrow for readability
-            count_str = str(self.live_count)
-            digit_count = len(count_str)
+            # Live count - formatted with commas for readability
+            # Format number with commas (e.g., 1,234,567)
+            count_formatted = f"{self.live_count:,}"
             
-            # Dynamic scaling: taller than wide for better readability
-            char_width = 8
+            # Use normal font size - let commas make it readable
+            # Just draw it larger and centered
+            text_width = len(count_formatted) * 6  # Approximate width
+            start_x = 64 - (text_width // 2)
+            start_y = 30
             
-            if digit_count <= 3:
-                # 1-3 digits: 4x tall, 2x wide
-                x_scale = 2
-                y_scale = 4
-                start_y = 22
-            elif digit_count <= 5:
-                # 4-5 digits: 3x tall, 1x wide
-                x_scale = 1
-                y_scale = 3
-                start_y = 26
-            else:
-                # 6+ digits: 2x tall, 1x wide
-                x_scale = 1
-                y_scale = 2
-                start_y = 30
-            
-            # Center the text horizontally
-            total_width = digit_count * char_width * x_scale
-            start_x = 64 - (total_width // 2)
-            
-            # Draw tall stretched count
-            for i, char in enumerate(count_str):
-                x_pos = start_x + (i * char_width * x_scale)
-                # Draw horizontally (x_scale times)
-                for dx in range(x_scale):
-                    # Draw vertically (y_scale times) - makes it tall
-                    for dy in range(y_scale):
-                        draw.text((x_pos + dx, start_y + dy), char, 
-                                font=self.font, fill="white")
+            # Draw the number 2x size for visibility
+            for dy in range(2):
+                for dx in range(2):
+                    draw.text((start_x + dx, start_y + dy), count_formatted, 
+                            font=self.font, fill="white")
     
     def draw_settings_screen(self):
         """System settings screen"""
