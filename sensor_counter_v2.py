@@ -281,39 +281,24 @@ class SensorCounter:
     
     def show_load_screen(self):
         """Branded loading screen with Stud Sensor animation"""
-        # Frame 1: CONNECT branding
+        # Frame 1: CONNECT / IWT Branding
         with canvas(self.device) as draw:
-            draw.text((35, 20), "CONNECT", font=self.font, fill="white")
-            draw.text((20, 35), "System v2.0", font=self.font, fill="white")
-        time.sleep(0.8)
+            draw.text((35, 15), "CONNECT", font=self.font, fill="white")
+            draw.line((30, 28, 98, 28), fill="white")
+            draw.text((10, 35), "IWT Stud Welding", font=self.font, fill="white")
+        time.sleep(1.2)
         
-        # Frame 2: IWT Stud Welding
-        with canvas(self.device) as draw:
-            draw.text((10, 15), "IWT Stud Welding", font=self.font, fill="white")
-            draw.rectangle((20, 30, 107, 35), outline="white", fill="black")
-            draw.rectangle((22, 32, 52, 33), fill="white")  # Loading 1/3
-        time.sleep(0.4)
-        
-        # Frame 3: Stud Sensor branding reveal
-        with canvas(self.device) as draw:
-            draw.text((10, 15), "IWT Stud Welding", font=self.font, fill="white")
-            # Stud Sensor title
-            draw.text((28, 30), "STUD SENSOR", font=self.font, fill="white")
-            draw.rectangle((20, 45, 107, 50), outline="white", fill="black")
-            draw.rectangle((22, 47, 82, 48), fill="white")  # Loading 2/3
-        time.sleep(0.4)
-        
-        # Frame 4: 3D Weld Stud Animation
+        # Frame 2: STUD SENSOR with 3D Weld Stud Animation
         weld_anim = WeldStudAnimation(self.device, self.font)
-        weld_anim.animate_rotating_stud(frames=50)
+        weld_anim.animate_rotating_stud(frames=60)
         
-        # Frame 5: Header identification
+        # Frame 3: Header Identification
         with canvas(self.device) as draw:
             # Stud Sensor branding
             draw.text((25, 8), "STUD SENSOR", font=self.font, fill="white")
             draw.line((20, 20, 108, 20), fill="white")
             
-            # Header name
+            # Header name (large)
             header_width = len(self.header_name) * 6
             start_x = 64 - (header_width // 2)
             for dy in range(2):
