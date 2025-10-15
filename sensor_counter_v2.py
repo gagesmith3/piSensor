@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 """
-CONNECT ERP - Header Counter Module v2.0
+CONNECT - Stud Sensor Module v2.0
 
-Part of the CONNECT ERP System for IWT Stud Welding
+Part of the CONNECT System for IWT Stud Welding
 Deployed to 11 heading machines for real-time production tracking
 
 Hardware: Raspberry Pi Zero W2 with Waveshare 1.3" OLED HAT
-Purpose: Count studs produced by heading machines and sync data to CONNECT ERP
+Purpose: Count studs produced by heading machines and sync data to CONNECT
 Features: 
 - Real-time counter display with physical screen control
-- Database synchronization with CONNECT ERP system
+- Database synchronization with CONNECT system
 - Status monitoring and production tracking
 - Manual counter adjustment via buttons
 
-IWT Stud Welding - Production Counter
+IWT Stud Welding - Stud Sensor
 Version 2.0 - October 2025
 """
 
 import time
 import sys
+import math
 from datetime import datetime
 
 try:
@@ -47,9 +48,164 @@ SENSOR_PIN = 17
 DC_PIN = 24
 RST_PIN = 25
 
+class WeldStudAnimation:
+    """3D rotating weld stud wireframe animation for Stud Sensor branding"""
+    
+    def __init__(self, device, font):
+        self.device = device
+        self.font = font
+    
+    def create_weld_stud_vertices(self, segments=8):
+        """Create 3D vertices for a weld stud shape"""
+        vertices = []
+        
+        # Head (larger diameter disc at top)
+        head_radius = 1.2
+        head_height = 0.3
+        
+        # Top circle of head
+        for i in range(segments):
+            angle = (i / segments) * 2 * math.pi
+            x = head_radius * math.cos(angle)
+            z = head_radius * math.sin(angle)
+            vertices.append((x, head_height, z))
+        
+        # Bottom circle of head
+        for i in range(segments):
+            angle = (i / segments) * 2 * math.pi
+            x = head_radius * math.cos(angle)
+            z = head_radius * math.sin(angle)
+            vertices.append((x, 0, z))
+        
+        # Shaft (smaller diameter cylinder)
+        shaft_radius = 0.7
+        shaft_height = -2.0
+        
+        # Top circle of shaft
+        for i in range(segments):
+            angle = (i / segments) * 2 * math.pi
+            x = shaft_radius * math.cos(angle)
+            z = shaft_radius * math.sin(angle)
+            vertices.append((x, 0, z))
+        
+        # Bottom circle of shaft
+        for i in range(segments):
+            angle = (i / segments) * 2 * math.pi
+            x = shaft_radius * math.cos(angle)
+            z = shaft_radius * math.sin(angle)
+            vertices.append((x, shaft_height, z))
+        
+        # Weld point at bottom
+        vertices.append((0, shaft_height - 0.3, 0))
+        
+        return vertices
+    
+    def rotate_3d(self, vertices, angle_x, angle_y):
+        """Rotate 3D vertices around X and Y axes"""
+        rotated = []
+        
+        cos_x = math.cos(angle_x)
+        sin_x = math.sin(angle_x)
+        cos_y = math.cos(angle_y)
+        sin_y = math.sin(angle_y)
+        
+        for x, y, z in vertices:
+            # Rotate around Y axis
+            temp_x = x * cos_y - z * sin_y
+            temp_z = x * sin_y + z * cos_y
+            
+            # Rotate around X axis
+            temp_y = y * cos_x - temp_z * sin_x
+            final_z = y * sin_x + temp_z * cos_x
+            
+            rotated.append((temp_x, temp_y, final_z))
+        
+        return rotated
+    
+    def project_to_2d(self, vertices, cx=35, cy=32, scale=15, distance=5):
+        """Project 3D vertices to 2D screen coordinates"""
+        projected = []
+        
+        for x, y, z in vertices:
+            factor = distance / (distance + z)
+            screen_x = int(cx + x * scale * factor)
+            screen_y = int(cy - y * scale * factor)
+            projected.append((screen_x, screen_y))
+        
+        return projected
+    
+    def draw_weld_stud(self, draw, angle_x, angle_y, segments=8):
+        """Draw the weld stud wireframe"""
+        vertices_3d = self.create_weld_stud_vertices(segments)
+        rotated = self.rotate_3d(vertices_3d, angle_x, angle_y)
+        vertices_2d = self.project_to_2d(rotated)
+        
+        # Draw head top circle
+        for i in range(segments):
+            p1 = vertices_2d[i]
+            p2 = vertices_2d[(i + 1) % segments]
+            draw.line((p1[0], p1[1], p2[0], p2[1]), fill="white")
+        
+        # Draw head bottom circle
+        offset = segments
+        for i in range(segments):
+            p1 = vertices_2d[offset + i]
+            p2 = vertices_2d[offset + (i + 1) % segments]
+            draw.line((p1[0], p1[1], p2[0], p2[1]), fill="white")
+        
+        # Draw head vertical lines
+        for i in range(segments):
+            p1 = vertices_2d[i]
+            p2 = vertices_2d[segments + i]
+            draw.line((p1[0], p1[1], p2[0], p2[1]), fill="white")
+        
+        # Draw shaft top circle
+        offset = segments * 2
+        for i in range(segments):
+            p1 = vertices_2d[offset + i]
+            p2 = vertices_2d[offset + (i + 1) % segments]
+            draw.line((p1[0], p1[1], p2[0], p2[1]), fill="white")
+        
+        # Draw shaft bottom circle
+        offset = segments * 3
+        for i in range(segments):
+            p1 = vertices_2d[offset + i]
+            p2 = vertices_2d[offset + (i + 1) % segments]
+            draw.line((p1[0], p1[1], p2[0], p2[1]), fill="white")
+        
+        # Draw shaft vertical lines
+        for i in range(segments):
+            p1 = vertices_2d[segments * 2 + i]
+            p2 = vertices_2d[segments * 3 + i]
+            draw.line((p1[0], p1[1], p2[0], p2[1]), fill="white")
+        
+        # Draw lines from shaft bottom to weld point
+        weld_point = vertices_2d[-1]
+        for i in range(0, segments, 2):
+            p1 = vertices_2d[segments * 3 + i]
+            draw.line((p1[0], p1[1], weld_point[0], weld_point[1]), fill="white")
+    
+    def animate_rotating_stud(self, frames=60):
+        """Rotating weld stud animation"""
+        for frame in range(frames):
+            with canvas(self.device) as draw:
+                # Rotation angles
+                angle_y = frame * 0.08
+                angle_x = math.sin(frame * 0.05) * 0.3
+                
+                # Draw the weld stud
+                self.draw_weld_stud(draw, angle_x, angle_y, segments=10)
+                
+                # Stud Sensor branding
+                draw.text((75, 15), "STUD", font=self.font, fill="white")
+                draw.text((72, 28), "SENSOR", font=self.font, fill="white")
+                draw.text((80, 50), "v2.0", font=self.font, fill="white")
+            
+            time.sleep(0.04)
+
 class SensorCounter:
     def __init__(self):
-        print("Initializing CONNECT Sensor Counter v2.0...")
+        print("Initializing CONNECT Stud Sensor v2.0...")
         
         # Setup GPIO
         self.setup_gpio()
@@ -124,54 +280,49 @@ class SensorCounter:
             self.font = None
     
     def show_load_screen(self):
-        """Branded loading screen with animation"""
-        # Frame 1: CONNECT ERP branding
+        """Branded loading screen with Stud Sensor animation"""
+        # Frame 1: CONNECT branding
         with canvas(self.device) as draw:
-            # CONNECT title (centered)
             draw.text((35, 20), "CONNECT", font=self.font, fill="white")
-            # Subtitle
-            draw.text((15, 35), "ERP System v2.0", font=self.font, fill="white")
-        time.sleep(1)
+            draw.text((20, 35), "System v2.0", font=self.font, fill="white")
+        time.sleep(0.8)
         
-        # Frame 2: IWT Stud Welding branding
-        with canvas(self.device) as draw:
-            # Company name
-            draw.text((10, 15), "IWT Stud Welding", font=self.font, fill="white")
-            # Module type
-            draw.text((15, 30), "Header Counter", font=self.font, fill="white")
-            # Animated loading bar
-            draw.rectangle((20, 45, 107, 50), outline="white", fill="black")
-            draw.rectangle((22, 47, 52, 48), fill="white")  # 1/3 filled
-        time.sleep(0.5)
-        
-        # Frame 3: Loading progress
+        # Frame 2: IWT Stud Welding
         with canvas(self.device) as draw:
             draw.text((10, 15), "IWT Stud Welding", font=self.font, fill="white")
-            draw.text((15, 30), "Header Counter", font=self.font, fill="white")
-            draw.rectangle((20, 45, 107, 50), outline="white", fill="black")
-            draw.rectangle((22, 47, 82, 48), fill="white")  # 2/3 filled
-        time.sleep(0.5)
+            draw.rectangle((20, 30, 107, 35), outline="white", fill="black")
+            draw.rectangle((22, 32, 52, 33), fill="white")  # Loading 1/3
+        time.sleep(0.4)
         
-        # Frame 4: Ready
+        # Frame 3: Stud Sensor branding reveal
         with canvas(self.device) as draw:
             draw.text((10, 15), "IWT Stud Welding", font=self.font, fill="white")
-            draw.text((15, 30), "Header Counter", font=self.font, fill="white")
+            # Stud Sensor title
+            draw.text((28, 30), "STUD SENSOR", font=self.font, fill="white")
             draw.rectangle((20, 45, 107, 50), outline="white", fill="black")
-            draw.rectangle((22, 47, 105, 48), fill="white")  # Full
-        time.sleep(0.3)
+            draw.rectangle((22, 47, 82, 48), fill="white")  # Loading 2/3
+        time.sleep(0.4)
+        
+        # Frame 4: 3D Weld Stud Animation
+        weld_anim = WeldStudAnimation(self.device, self.font)
+        weld_anim.animate_rotating_stud(frames=50)
         
         # Frame 5: Header identification
         with canvas(self.device) as draw:
-            # Header name (large)
+            # Stud Sensor branding
+            draw.text((25, 8), "STUD SENSOR", font=self.font, fill="white")
+            draw.line((20, 20, 108, 20), fill="white")
+            
+            # Header name
             header_width = len(self.header_name) * 6
             start_x = 64 - (header_width // 2)
-            # Draw header name slightly larger for emphasis
             for dy in range(2):
                 for dx in range(2):
-                    draw.text((start_x + dx, 20 + dy), self.header_name, 
+                    draw.text((start_x + dx, 28 + dy), self.header_name, 
                              font=self.font, fill="white")
-            # Ready indicator
-            draw.text((40, 40), "READY", font=self.font, fill="white")
+            
+            # Ready status
+            draw.text((40, 48), "READY", font=self.font, fill="white")
         time.sleep(1)
     
     def draw_status_bar(self, draw):
@@ -261,9 +412,9 @@ class SensorCounter:
             # Header identification (most important)
             draw.text((0, 15), f"Header: {self.header_name}", font=self.font, fill="white")
             
-            # Database connection to CONNECT ERP
+            # Database connection to CONNECT
             db_status = "ONLINE" if self.db_connected else "OFFLINE"
-            draw.text((0, 27), f"ERP Link: {db_status}", font=self.font, fill="white")
+            draw.text((0, 27), f"DB Link: {db_status}", font=self.font, fill="white")
             
             # IP Address
             import socket
