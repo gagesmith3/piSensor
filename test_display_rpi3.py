@@ -41,6 +41,10 @@ RST_PIN = 25
 
 class DisplayTest:
     def __init__(self):
+        # Initialize GPIO FIRST, before display
+        print("Setting up GPIO...")
+        self.setup_buttons()
+        
         print("Initializing display (SH1106, 4-wire SPI)...")
         try:
             serial = spi(device=0, port=0, bus_speed_hz=8000000, dc_pin=DC_PIN, rst_pin=RST_PIN)
@@ -53,20 +57,39 @@ class DisplayTest:
             self.font = ImageFont.load_default()
         except:
             self.font = None
-        self.setup_buttons()
+        
         self.button_presses = {k: 0 for k in ['KEY1','KEY2','KEY3','UP','DOWN','LEFT','RIGHT','PRESS']}
         self.last_button = "None"
         self.current_screen = 0
         self.test_counter = 0
+    
     def setup_buttons(self):
+        print("Configuring GPIO mode and pins...")
         GPIO.setmode(GPIO.BCM)
+        print("✓ GPIO mode set to BCM")
+        
         pins = [KEY1_PIN, KEY2_PIN, KEY3_PIN, JOYSTICK_UP, JOYSTICK_DOWN, JOYSTICK_LEFT, JOYSTICK_RIGHT, JOYSTICK_PRESS]
+        
+        # First, set up all pins as inputs
         for pin in pins:
             try:
                 GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-                GPIO.add_event_detect(pin, GPIO.FALLING, callback=self.button_callback, bouncetime=200)
+                print(f"✓ GPIO {pin} configured as input")
             except Exception as e:
-                print(f"GPIO {pin} setup failed: {e}")
+                print(f"✗ GPIO {pin} setup failed: {e}")
+                raise
+        
+        # Then, add edge detection separately
+        print("\nAdding edge detection...")
+        for pin in pins:
+            try:
+                GPIO.add_event_detect(pin, GPIO.FALLING, callback=self.button_callback, bouncetime=200)
+                print(f"✓ GPIO {pin} edge detection added")
+            except Exception as e:
+                print(f"✗ GPIO {pin} edge detection failed: {e}")
+                print(f"   Error type: {type(e).__name__}")
+                print(f"   Error details: {str(e)}")
+                # Don't raise - continue with other pins
     def button_callback(self, channel):
         pin_map = {
             KEY1_PIN: 'KEY1', KEY2_PIN: 'KEY2', KEY3_PIN: 'KEY3',
