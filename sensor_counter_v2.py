@@ -399,8 +399,8 @@ class SensorCounter:
             # Format number with commas (e.g., 1,234,567)
             count_formatted = f"{self.live_count:,}"
             
-            # Create a temporary image to draw text, then scale it up vertically
-            # This keeps the thin font but makes it taller/larger
+            # Create a temporary image to draw text, then scale it up
+            # This keeps the thin font but makes it larger
             temp_img = Image.new('1', (128, 64), 0)
             temp_draw = ImageDraw.Draw(temp_img)
             
@@ -409,15 +409,19 @@ class SensorCounter:
             temp_x = 64 - (text_width // 2)
             temp_draw.text((temp_x, 20), count_formatted, font=self.font, fill=1)
             
-            # Now scale it up vertically by spacing pixels (thin scaling)
+            # Now scale it up both horizontally and vertically by spacing pixels
             scale = 3
+            # Calculate offset to keep scaled text centered
+            scaled_text_width = text_width * scale
+            x_offset = (128 - scaled_text_width) // 2 - (temp_x * scale)
+            
             for y in range(64):
                 for x in range(128):
                     if temp_img.getpixel((x, y)):
-                        # Draw scaled pixel (single pixel, spaced out vertically)
-                        scaled_x = x
+                        # Draw scaled pixel (single pixel, spaced out both directions)
+                        scaled_x = x_offset + (x * scale)
                         scaled_y = 13 + ((y - 20) * scale)
-                        if 0 <= scaled_y < 64:
+                        if 0 <= scaled_x < 128 and 0 <= scaled_y < 64:
                             draw.point((scaled_x, scaled_y), fill="white")
     
     def draw_settings_screen(self):
