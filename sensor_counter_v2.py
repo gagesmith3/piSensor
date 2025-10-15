@@ -274,7 +274,13 @@ class SensorCounter:
             print(f"✗ Display init failed: {e}")
             sys.exit(1)
         
-        # Try to load a TrueType font for better number rendering
+        # Load default small font for UI elements
+        try:
+            self.font = ImageFont.load_default()
+        except:
+            self.font = None
+        
+        # Try to load a larger TrueType font specifically for the counter display
         try:
             # Try common TrueType font locations on Raspberry Pi
             font_paths = [
@@ -284,21 +290,21 @@ class SensorCounter:
                 "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
             ]
             
-            self.font = None
+            self.counter_font = None
             for font_path in font_paths:
                 try:
-                    # Load at size 10 for base rendering (will be scaled)
-                    self.font = ImageFont.truetype(font_path, 10)
-                    print(f"✓ Loaded TrueType font: {font_path}")
+                    # Load at larger size for direct rendering (no scaling needed)
+                    self.counter_font = ImageFont.truetype(font_path, 24)
+                    print(f"✓ Loaded TrueType counter font: {font_path}")
                     break
                 except:
                     continue
             
-            if self.font is None:
-                print("⚠ TrueType fonts not found, using default")
-                self.font = ImageFont.load_default()
+            if self.counter_font is None:
+                print("⚠ TrueType fonts not found, will use default for counter")
+                self.counter_font = self.font
         except:
-            self.font = ImageFont.load_default()
+            self.counter_font = self.font
     
     def show_load_screen(self):
         """Branded loading screen with Stud Sensor animation"""
@@ -420,39 +426,27 @@ class SensorCounter:
             # Format number with commas (e.g., 1,234,567)
             count_formatted = f"{self.live_count:,}"
             
-            # Create a temporary image to draw text, then scale it up
-            # This keeps the thin font but makes it larger
-            temp_img = Image.new('1', (128, 64), 0)
-            temp_draw = ImageDraw.Draw(temp_img)
-            
-            # Draw the text normally (thin) on temp image
-            text_width = len(count_formatted) * 6
-            temp_x = 64 - (text_width // 2)
-            temp_draw.text((temp_x, 20), count_formatted, font=self.font, fill=1)
-            
-            # Now scale it up both horizontally and vertically by spacing pixels
-            scale = 3
-            # Calculate offset to keep scaled text centered
-            scaled_text_width = text_width * scale
-            x_offset = (128 - scaled_text_width) // 2 - (temp_x * scale)
-            
-            # Pixel weight (3 for bolder appearance)
-            weight = 3
-            
-            for y in range(64):
-                for x in range(128):
-                    if temp_img.getpixel((x, y)):
-                        # Draw scaled pixel with weight
-                        scaled_x = x_offset + (x * scale)
-                        scaled_y = 13 + ((y - 20) * scale)
-                        
-                        # Draw pixel with thickness
-                        for wy in range(weight):
-                            for wx in range(weight):
-                                px = scaled_x + wx
-                                py = scaled_y + wy
-                                if 0 <= px < 128 and 0 <= py < 64:
-                                    draw.point((px, py), fill="white")
+            # Use the larger TrueType font directly (much cleaner rendering)
+            try:
+                # Get text bounding box for proper centering
+                bbox = draw.textbbox((0, 0), count_formatted, font=self.counter_font)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
+                
+                # Center the text
+                start_x = (128 - text_width) // 2
+                start_y = 30  # Below status bar
+                
+                # Draw with TrueType font (clean, anti-aliased)
+                draw.text((start_x, start_y), count_formatted, 
+                         font=self.counter_font, fill="white")
+            except:
+                # Fallback to old method if TrueType fails
+                text_width = len(count_formatted) * 6
+                start_x = 64 - (text_width // 2)
+                start_y = 32
+                draw.text((start_x, start_y), count_formatted, 
+                         font=self.font, fill="white")
     
     def draw_settings_screen(self):
         """System settings screen"""
