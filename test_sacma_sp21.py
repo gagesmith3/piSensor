@@ -304,35 +304,85 @@ class SacmaSP21Animation:
             parts_count += 1
     
     def run_sacma_boot_sequence(self):
-        """Complete Sacma SP-21 boot sequence"""
-        print("Running Sacma SP-21 boot animation...")
+        """Complete boot sequence with 80s retro theme"""
+        print("Running 80s retro boot animation...")
         
-        # 1. Machine identification
-        with canvas(self.device) as draw:
-            draw.text((25, 10), "SACMA", font=self.font, fill="white")
-            draw.text((25, 25), "SP-21", font=self.font, fill="white")
-            draw.text((10, 40), "Cold Heading", font=self.font, fill="white")
-        time.sleep(1.5)
+        # 1. 80s Grid Flyby
+        print("  - Tron grid flyby")
+        for frame in range(40):
+            progress = frame / 39.0
+            with canvas(self.device) as draw:
+                # Perspective grid (Tron style)
+                horizon_y = 20
+                vanishing_x = 64
+                
+                # Grid lines receding into distance
+                for i in range(8):
+                    z_depth = i / 8.0 + progress
+                    if z_depth > 1:
+                        z_depth = z_depth - int(z_depth)
+                    
+                    y = horizon_y + int(40 * z_depth)
+                    if y < 64:
+                        # Horizontal grid line
+                        brightness = int(z_depth * 255) % 2
+                        if brightness:
+                            draw.line((0, y, 127, y), fill="white")
+                        
+                        # Vertical lines converging
+                        left_x = vanishing_x - int(60 * z_depth)
+                        right_x = vanishing_x + int(60 * z_depth)
+                        
+                        if i % 2 == 0:
+                            draw.line((left_x, y, vanishing_x, horizon_y), fill="white")
+                            draw.line((right_x, y, vanishing_x, horizon_y), fill="white")
+                
+                # Title appearing
+                if progress > 0.5:
+                    alpha = (progress - 0.5) * 2
+                    if int(alpha * 10) % 2:
+                        draw.text((35, 5), "CONNECT", font=self.font, fill="white")
+            
+            time.sleep(0.03)
         
-        # 2. Single cycle demo
-        self.sacma_production_cycle()
+        # 2. Scanline build
+        print("  - Scanline build")
+        for line in range(64):
+            with canvas(self.device) as draw:
+                draw.text((35, 10), "CONNECT", font=self.font, fill="white")
+                draw.text((25, 25), "Sacma SP-21", font=self.font, fill="white")
+                
+                # Scanning line effect
+                draw.line((0, line, 127, line), fill="white")
+                
+                if line > 35:
+                    draw.text((30, 40), "System v2.0", font=self.font, fill="white")
+            
+            time.sleep(0.02)
+        
         time.sleep(0.3)
         
-        # 3. Continuous production
-        self.continuous_sacma_production()
-        time.sleep(0.3)
+        # 3. System ready flash
+        for _ in range(3):
+            with canvas(self.device) as draw:
+                draw.rectangle((10, 15, 118, 50), outline="white", fill="black")
+                draw.text((35, 23), "CONNECT", font=self.font, fill="white")
+                draw.text((20, 35), "System Ready", font=self.font, fill="white")
+            time.sleep(0.15)
+            
+            with canvas(self.device) as draw:
+                pass
+            time.sleep(0.15)
         
-        # 4. System ready
+        # Final ready screen
         with canvas(self.device) as draw:
-            draw.text((20, 5), "CONNECT", font=self.font, fill="white")
-            draw.line((20, 20, 108, 20), fill="white", width=2)
-            draw.text((15, 28), "Sacma SP-21", font=self.font, fill="white")
-            draw.text((20, 42), "System Ready", font=self.font, fill="white")
-            draw.text((48, 54), "v2.0", font=self.font, fill="white")
+            draw.rectangle((10, 15, 118, 50), outline="white", fill="black")
+            draw.text((35, 23), "CONNECT", font=self.font, fill="white")
+            draw.text((20, 35), "System Ready", font=self.font, fill="white")
         
-        time.sleep(1.5)
+        time.sleep(1)
         
-        print("✓ Sacma SP-21 boot complete!")
+        print("✓ 80s retro boot complete!")
 
 class DisplayTest:
     def __init__(self):
@@ -353,7 +403,7 @@ class DisplayTest:
         except:
             self.font = None
         
-        # Run Sacma SP-21 boot animation
+        # Run 80s retro boot animation
         boot_anim = SacmaSP21Animation(self.device, self.font)
         boot_anim.run_sacma_boot_sequence()
         
@@ -559,36 +609,36 @@ class DisplayTest:
     
     def draw_status_bar(self, draw):
         """Status bar at top - smartphone style"""
-        # Top bar background
-        draw.rectangle((0, 0, 127, 9), outline="white", fill="black")
+        # Top bar background (taller - 12 pixels instead of 9)
+        draw.rectangle((0, 0, 127, 12), outline="white", fill="black")
         
         # Connection status icon (left side)
         if self.connection_status == "ONLINE":
             # WiFi icon (connected)
-            draw.arc((2, 2, 10, 8), 0, 180, fill="white")
-            draw.arc((4, 3, 8, 7), 0, 180, fill="white")
-            draw.point((6, 6), fill="white")
+            draw.arc((2, 3, 10, 9), 0, 180, fill="white")
+            draw.arc((4, 4, 8, 8), 0, 180, fill="white")
+            draw.point((6, 7), fill="white")
         elif self.connection_status == "CONNECTING":
             # Partial WiFi (connecting)
-            draw.arc((2, 2, 10, 8), 0, 180, fill="white")
-            draw.text((3, 1), "?", font=self.font, fill="white")
+            draw.arc((2, 3, 10, 9), 0, 180, fill="white")
+            draw.text((3, 2), "?", font=self.font, fill="white")
         else:
             # X icon (offline)
-            draw.line((2, 2, 8, 8), fill="white")
-            draw.line((8, 2, 2, 8), fill="white")
+            draw.line((2, 3, 8, 9), fill="white")
+            draw.line((8, 3, 2, 9), fill="white")
         
         # Counting status (middle)
         if self.counting_active:
-            draw.text((40, 1), "COUNTING", font=self.font, fill="white")
+            draw.text((40, 2), "COUNTING", font=self.font, fill="white")
         else:
-            draw.text((40, 1), "PAUSED", font=self.font, fill="white")
+            draw.text((40, 2), "PAUSED", font=self.font, fill="white")
         
         # Clock (right side)
         time_str = datetime.now().strftime('%H:%M')
-        draw.text((95, 1), time_str, font=self.font, fill="white")
+        draw.text((95, 2), time_str, font=self.font, fill="white")
         
         # Bottom border
-        draw.line((0, 9, 127, 9), fill="white")
+        draw.line((0, 12, 127, 12), fill="white")
     
     def draw_screen_0(self):
         """MAIN SCREEN - Real-time counter with big numbers"""
@@ -605,9 +655,9 @@ class DisplayTest:
             char_height = 8
             scale = 3
             
-            # Draw large numbers manually (3x scale)
+            # Draw large numbers manually (3x scale) - adjusted for taller status bar
             start_x = 64 - (len(count_str) * char_width * scale // 2)
-            start_y = 25
+            start_y = 28
             
             for i, char in enumerate(count_str):
                 x_pos = start_x + (i * char_width * scale)
@@ -617,7 +667,7 @@ class DisplayTest:
                         draw.text((x_pos + dx, start_y + dy), char, font=self.font, fill="white")
             
             # Unconfirmed total below (smaller)
-            draw.text((20, 52), f"Unconfirmed: {self.unconfirmed_total}", font=self.font, fill="white")
+            draw.text((20, 55), f"Unconfirmed: {self.unconfirmed_total}", font=self.font, fill="white")
             
             # Animated rotating weld stud in bottom-right corner (small)
             angle = time.time() * 2
@@ -664,9 +714,9 @@ class DisplayTest:
             # Status bar at top
             self.draw_status_bar(draw)
             
-            # Title
-            draw.text((0, 12), "SYSTEM SETTINGS", font=self.font, fill="white")
-            draw.line((0, 21, 127, 21), fill="white")
+            # Title (adjusted for taller status bar)
+            draw.text((0, 15), "SYSTEM SETTINGS", font=self.font, fill="white")
+            draw.line((0, 24, 127, 24), fill="white")
             
             # IP Address
             import socket
@@ -677,17 +727,17 @@ class DisplayTest:
                 s.close()
             except:
                 ip = "Not Connected"
-            draw.text((0, 24), f"IP: {ip}", font=self.font, fill="white")
+            draw.text((0, 27), f"IP: {ip}", font=self.font, fill="white")
             
             # Connection Status
             status_text = f"DB: {self.connection_status}"
-            draw.text((0, 34), status_text, font=self.font, fill="white")
+            draw.text((0, 37), status_text, font=self.font, fill="white")
             
             # Header info (if we have it)
-            draw.text((0, 44), "Header: H1-SP21", font=self.font, fill="white")
+            draw.text((0, 47), "Header: H1-SP21", font=self.font, fill="white")
             
             # Uptime or other system info
-            draw.text((0, 54), f"Sensor: GPIO 17", font=self.font, fill="white")
+            draw.text((0, 57), f"Sensor: GPIO 17", font=self.font, fill="white")
             
             # Mini punch animation in corner
             self.draw_machine_mini_animation(draw, time.time() * 10)
@@ -698,17 +748,17 @@ class DisplayTest:
             # Status bar at top
             self.draw_status_bar(draw)
             
-            # Title
-            draw.text((15, 12), "CONTROL PANEL", font=self.font, fill="white")
-            draw.line((0, 21, 127, 21), fill="white")
+            # Title (adjusted for taller status bar)
+            draw.text((15, 15), "CONTROL PANEL", font=self.font, fill="white")
+            draw.line((0, 24, 127, 24), fill="white")
             
             # Placeholder content
-            draw.text((10, 28), "[ TBD ]", font=self.font, fill="white")
+            draw.text((10, 31), "[ TBD ]", font=self.font, fill="white")
             
             # Instructions for now
-            draw.text((0, 40), "KEY1: Toggle DB", font=self.font, fill="white")
-            draw.text((0, 48), "KEY2: Confirm Count", font=self.font, fill="white")
-            draw.text((0, 56), "KEY3: Reset Count", font=self.font, fill="white")
+            draw.text((0, 43), "KEY1: Toggle DB", font=self.font, fill="white")
+            draw.text((0, 51), "KEY2: Confirm Count", font=self.font, fill="white")
+            draw.text((0, 59), "KEY3: Reset Count", font=self.font, fill="white")
     
     def run_test(self):
         print("\n" + "="*60)
