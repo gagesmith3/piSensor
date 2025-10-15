@@ -399,14 +399,25 @@ class SensorCounter:
             # Format number with commas (e.g., 1,234,567)
             count_formatted = f"{self.live_count:,}"
             
-            # Draw centered with normal font weight
-            text_width = len(count_formatted) * 6  # Approximate width
-            start_x = 64 - (text_width // 2)
-            start_y = 32
+            # Scale up the font size while keeping it thin
+            # Draw each character scaled by 3x
+            scale = 3
+            char_width = 6 * scale
+            char_height = 8 * scale
             
-            # Draw once - clean, thin font
-            draw.text((start_x, start_y), count_formatted, 
-                     font=self.font, fill="white")
+            # Calculate starting position to center the text
+            total_width = len(count_formatted) * char_width
+            start_x = 64 - (total_width // 2)
+            start_y = 28
+            
+            # Draw each character of the number, scaled up
+            for i, char in enumerate(count_formatted):
+                char_x = start_x + (i * char_width)
+                # Draw the character scaled up by repeating pixels
+                for dy in range(scale):
+                    for dx in range(scale):
+                        draw.text((char_x + dx, start_y + dy), char, 
+                                 font=self.font, fill="white")
     
     def draw_settings_screen(self):
         """System settings screen"""
