@@ -415,14 +415,23 @@ class SensorCounter:
             scaled_text_width = text_width * scale
             x_offset = (128 - scaled_text_width) // 2 - (temp_x * scale)
             
+            # Pixel weight (1 or 2 for slight thickness)
+            weight = 2
+            
             for y in range(64):
                 for x in range(128):
                     if temp_img.getpixel((x, y)):
-                        # Draw scaled pixel (single pixel, spaced out both directions)
+                        # Draw scaled pixel with slight weight
                         scaled_x = x_offset + (x * scale)
                         scaled_y = 13 + ((y - 20) * scale)
-                        if 0 <= scaled_x < 128 and 0 <= scaled_y < 64:
-                            draw.point((scaled_x, scaled_y), fill="white")
+                        
+                        # Draw pixel with slight thickness
+                        for wy in range(weight):
+                            for wx in range(weight):
+                                px = scaled_x + wx
+                                py = scaled_y + wy
+                                if 0 <= px < 128 and 0 <= py < 64:
+                                    draw.point((px, py), fill="white")
     
     def draw_settings_screen(self):
         """System settings screen"""
