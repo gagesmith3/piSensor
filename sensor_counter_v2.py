@@ -274,10 +274,31 @@ class SensorCounter:
             print(f"✗ Display init failed: {e}")
             sys.exit(1)
         
+        # Try to load a TrueType font for better number rendering
         try:
-            self.font = ImageFont.load_default()
-        except:
+            # Try common TrueType font locations on Raspberry Pi
+            font_paths = [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            ]
+            
             self.font = None
+            for font_path in font_paths:
+                try:
+                    # Load at size 10 for base rendering (will be scaled)
+                    self.font = ImageFont.truetype(font_path, 10)
+                    print(f"✓ Loaded TrueType font: {font_path}")
+                    break
+                except:
+                    continue
+            
+            if self.font is None:
+                print("⚠ TrueType fonts not found, using default")
+                self.font = ImageFont.load_default()
+        except:
+            self.font = ImageFont.load_default()
     
     def show_load_screen(self):
         """Branded loading screen with Stud Sensor animation"""
