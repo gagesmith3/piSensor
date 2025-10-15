@@ -362,6 +362,13 @@ class DisplayTest:
         self.current_screen = 0
         self.test_counter = 0
         
+        # Production variables
+        self.live_count = 0
+        self.unconfirmed_total = 0
+        self.connection_status = "OFFLINE"  # ONLINE, OFFLINE, CONNECTING
+        self.counting_active = False
+        self.db_connected = False
+        
         self.button_states = {}
         self.pin_map = {
             KEY1_PIN: 'KEY1', KEY2_PIN: 'KEY2', KEY3_PIN: 'KEY3',
@@ -407,17 +414,34 @@ class DisplayTest:
         self.last_button = btn
         
         if btn == 'LEFT':
-            self.current_screen = (self.current_screen - 1) % 4
+            self.current_screen = (self.current_screen - 1) % 3  # 3 screens now
         elif btn == 'RIGHT':
-            self.current_screen = (self.current_screen + 1) % 4
+            self.current_screen = (self.current_screen + 1) % 3  # 3 screens now
         elif btn == 'UP':
-            self.test_counter += 1
+            # Simulate part detection
+            self.live_count += 1
+            self.unconfirmed_total += 1
         elif btn == 'DOWN':
-            self.test_counter = max(0, self.test_counter - 1)
+            # Decrease for testing
+            self.live_count = max(0, self.live_count - 1)
+            self.unconfirmed_total = max(0, self.unconfirmed_total - 1)
         elif btn == 'PRESS':
-            self.test_counter = 0
+            # Toggle counting active
+            self.counting_active = not self.counting_active
+        elif btn == 'KEY1':
+            # Toggle connection status (for testing)
+            statuses = ["OFFLINE", "CONNECTING", "ONLINE"]
+            current_idx = statuses.index(self.connection_status)
+            self.connection_status = statuses[(current_idx + 1) % 3]
+            self.db_connected = (self.connection_status == "ONLINE")
+        elif btn == 'KEY2':
+            # Confirm/update count (reset unconfirmed)
+            self.unconfirmed_total = 0
+        elif btn == 'KEY3':
+            # Reset live count
+            self.live_count = 0
         
-        print(f"Button: {btn} (Total: {self.button_presses[btn]})")
+        print(f"Button: {btn} (Count: {self.live_count}, Unconfirmed: {self.unconfirmed_total})")
     
     def clear_display(self):
         with canvas(self.device) as draw:
@@ -533,22 +557,118 @@ class DisplayTest:
             draw.ellipse((center_x - 1, center_y - 1,
                          center_x + 1, center_y + 1), fill="white")
     
+    def draw_status_bar(self, draw):
+        """Status bar at top - smartphone style"""
+        # Top bar background
+        draw.rectangle((0, 0, 127, 9), outline="white", fill="black")
+        
+        # Connection status icon (left side)
+        if self.connection_status == "ONLINE":
+            # WiFi icon (connected)
+            draw.arc((2, 2, 10, 8), 0, 180, fill="white")
+            draw.arc((4, 3, 8, 7), 0, 180, fill="white")
+            draw.point((6, 6), fill="white")
+        elif self.connection_status == "CONNECTING":
+            # Partial WiFi (connecting)
+            draw.arc((2, 2, 10, 8), 0, 180, fill="white")
+            draw.text((3, 1), "?", font=self.font, fill="white")
+        else:
+            # X icon (offline)
+            draw.line((2, 2, 8, 8), fill="white")
+            draw.line((8, 2, 2, 8), fill="white")
+        
+        # Counting status (middle)
+        if self.counting_active:
+            draw.text((40, 1), "COUNTING", font=self.font, fill="white")
+        else:
+            draw.text((40, 1), "PAUSED", font=self.font, fill="white")
+        
+        # Clock (right side)
+        time_str = datetime.now().strftime('%H:%M')
+        draw.text((95, 1), time_str, font=self.font, fill="white")
+        
+        # Bottom border
+        draw.line((0, 9, 127, 9), fill="white")
+    
     def draw_screen_0(self):
-        """Home screen with rotating weld stud animation"""
+        """MAIN SCREEN - Real-time counter with big numbers"""
         with canvas(self.device) as draw:
-            draw.text((20, 5), "CONNECT", font=self.font, fill="white")
-            draw.line((20, 20, 108, 20), fill="white", width=1)
-            draw.text((15, 28), "Sacma SP-21", font=self.font, fill="white")
-            draw.text((0, 45), "Use <- -> navigate", font=self.font, fill="white")
+            # Status bar at top
+            self.draw_status_bar(draw)
             
-            # Animated rotating weld stud in corner
+            # Live count - BIG numbers (center of screen)
+            count_str = str(self.live_count)
+            
+            # Calculate position to center large text
+            # Using default font, scale by drawing larger
+            char_width = 8
+            char_height = 8
+            scale = 3
+            
+            # Draw large numbers manually (3x scale)
+            start_x = 64 - (len(count_str) * char_width * scale // 2)
+            start_y = 25
+            
+            for i, char in enumerate(count_str):
+                x_pos = start_x + (i * char_width * scale)
+                # Draw each character 3x3 for scaling effect
+                for dy in range(scale):
+                    for dx in range(scale):
+                        draw.text((x_pos + dx, start_y + dy), char, font=self.font, fill="white")
+            
+            # Unconfirmed total below (smaller)
+            draw.text((20, 52), f"Unconfirmed: {self.unconfirmed_total}", font=self.font, fill="white")
+            
+            # Animated rotating weld stud in bottom-right corner (small)
             angle = time.time() * 2
-            self.draw_rotating_weld_stud(draw, angle)
+            self.draw_rotating_weld_stud_mini(draw, angle, 110, 56)
+    
+    def draw_rotating_weld_stud_mini(self, draw, angle, center_x, center_y):
+        """Smaller rotating weld stud for corner placement"""
+        cos_a = math.cos(angle)
+        sin_a = math.sin(angle)
+        
+        # Tiny weld stud vertices
+        vertices_3d = [
+            (-2, -0.5, -0.5), (2, -0.5, -0.5), (2, -0.5, 0.5), (-2, -0.5, 0.5),
+            (-2, 0.5, -0.5), (2, 0.5, -0.5), (2, 0.5, 0.5), (-2, 0.5, 0.5),
+            (-1, 0.5, -0.5), (1, 0.5, -0.5), (1, 0.5, 0.5), (-1, 0.5, 0.5),
+            (-1, 2, -0.5), (1, 2, -0.5), (1, 2, 0.5), (-1, 2, 0.5),
+        ]
+        
+        projected = []
+        for x, y, z in vertices_3d:
+            rx = x * cos_a - z * sin_a
+            rz = x * sin_a + z * cos_a
+            scale = 1.2 / (1 + rz * 0.05)
+            sx = center_x + int(rx * scale)
+            sy = center_y + int(y * scale)
+            projected.append((sx, sy))
+        
+        edges = [(0,1),(1,2),(2,3),(3,0), (4,5),(5,6),(6,7),(7,4),
+                 (0,4),(1,5),(2,6),(3,7), (8,9),(9,10),(10,11),(11,8),
+                 (12,13),(13,14),(14,15),(15,12), (8,12),(9,13),(10,14),(11,15),
+                 (4,8),(5,9),(6,10),(7,11)]
+        
+        for i, j in edges:
+            if i < len(projected) and j < len(projected):
+                try:
+                    draw.line((projected[i][0], projected[i][1],
+                             projected[j][0], projected[j][1]), fill="white")
+                except:
+                    pass
     
     def draw_screen_1(self):
-        """System info screen with mini punch animation"""
+        """SYSTEM SETTINGS - IP, connection, diagnostics"""
         with canvas(self.device) as draw:
-            draw.text((0, 0), "=== SYSTEM INFO ===", font=self.font, fill="white")
+            # Status bar at top
+            self.draw_status_bar(draw)
+            
+            # Title
+            draw.text((0, 12), "SYSTEM SETTINGS", font=self.font, fill="white")
+            draw.line((0, 21, 127, 21), fill="white")
+            
+            # IP Address
             import socket
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -556,50 +676,53 @@ class DisplayTest:
                 ip = s.getsockname()[0]
                 s.close()
             except:
-                ip = "N/A"
-            draw.text((0, 15), f"IP: {ip}", font=self.font, fill="white")
-            draw.text((0, 28), f"Time: {datetime.now().strftime('%H:%M:%S')}", font=self.font, fill="white")
-            draw.text((0, 41), f"Counter: {self.test_counter}", font=self.font, fill="white")
-            draw.text((0, 54), f"Screen: {self.current_screen + 1}/4", font=self.font, fill="white")
+                ip = "Not Connected"
+            draw.text((0, 24), f"IP: {ip}", font=self.font, fill="white")
             
-            # Mini SP-21 punch animation
+            # Connection Status
+            status_text = f"DB: {self.connection_status}"
+            draw.text((0, 34), status_text, font=self.font, fill="white")
+            
+            # Header info (if we have it)
+            draw.text((0, 44), "Header: H1-SP21", font=self.font, fill="white")
+            
+            # Uptime or other system info
+            draw.text((0, 54), f"Sensor: GPIO 17", font=self.font, fill="white")
+            
+            # Mini punch animation in corner
             self.draw_machine_mini_animation(draw, time.time() * 10)
     
     def draw_screen_2(self):
-        """Button test screen with pulsing indicators"""
+        """CONTROL PANEL - TBD"""
         with canvas(self.device) as draw:
-            draw.text((0, 0), "=== BUTTON TEST ===", font=self.font, fill="white")
-            draw.text((0, 12), f"Last: {self.last_button}", font=self.font, fill="white")
-            y = 25
-            for btn in ['KEY1', 'KEY2', 'KEY3']:
-                count = self.button_presses[btn]
-                draw.text((0, y), f"{btn}: {count}", font=self.font, fill="white")
-                y += 12
+            # Status bar at top
+            self.draw_status_bar(draw)
             
-            # Pulsing indicator for last pressed button
-            if self.last_button in ['KEY1', 'KEY2', 'KEY3']:
-                self.draw_button_pulse(draw, time.time() * 10, self.last_button)
-    
-    def draw_screen_3(self):
-        """Joystick test screen with direction animation"""
-        with canvas(self.device) as draw:
-            draw.text((0, 0), "== JOYSTICK TEST ==", font=self.font, fill="white")
-            y = 12
-            for btn in ['UP', 'DOWN', 'LEFT', 'RIGHT', 'PRESS']:
-                count = self.button_presses[btn]
-                draw.text((0, y), f"{btn}: {count}", font=self.font, fill="white")
-                y += 10
+            # Title
+            draw.text((15, 12), "CONTROL PANEL", font=self.font, fill="white")
+            draw.line((0, 21, 127, 21), fill="white")
             
-            # Animated direction indicator for last joystick input
-            if self.last_button in ['UP', 'DOWN', 'LEFT', 'RIGHT', 'PRESS']:
-                self.draw_joystick_direction(draw, time.time() * 10, self.last_button)
+            # Placeholder content
+            draw.text((10, 28), "[ TBD ]", font=self.font, fill="white")
+            
+            # Instructions for now
+            draw.text((0, 40), "KEY1: Toggle DB", font=self.font, fill="white")
+            draw.text((0, 48), "KEY2: Confirm Count", font=self.font, fill="white")
+            draw.text((0, 56), "KEY3: Reset Count", font=self.font, fill="white")
     
     def run_test(self):
         print("\n" + "="*60)
         print("CONNECT - Sacma SP-21 Sensor System")
         print("="*60)
-        print("\nControls: LEFT/RIGHT navigate, UP/DOWN counter, PRESS reset")
-        print("          KEY1/2/3 test buttons, Ctrl+C exit")
+        print("\nProduction Controls:")
+        print("  LEFT/RIGHT - Navigate screens")
+        print("  UP         - Simulate part detected (increment)")
+        print("  DOWN       - Decrement count (testing)")
+        print("  PRESS      - Toggle counting ON/OFF")
+        print("  KEY1       - Toggle connection status")
+        print("  KEY2       - Confirm/update count (reset unconfirmed)")
+        print("  KEY3       - Reset live count")
+        print("  Ctrl+C     - Exit")
         print("="*60 + "\n")
         
         try:
