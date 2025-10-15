@@ -286,11 +286,11 @@ class SensorCounter:
             draw.text((35, 15), "CONNECT", font=self.font, fill="white")
             draw.line((30, 28, 98, 28), fill="white")
             draw.text((10, 35), "IWT Stud Welding", font=self.font, fill="white")
-        time.sleep(1.2)
+        time.sleep(3)
         
-        # Frame 2: STUD SENSOR with 3D Weld Stud Animation
+        # Frame 2: STUD SENSOR with 3D Weld Stud Animation (3 seconds)
         weld_anim = WeldStudAnimation(self.device, self.font)
-        weld_anim.animate_rotating_stud(frames=60)
+        weld_anim.animate_rotating_stud(frames=75)  # 75 frames @ 0.04s = 3 seconds
         
         # Frame 3: Header Identification
         with canvas(self.device) as draw:
@@ -308,7 +308,7 @@ class SensorCounter:
             
             # Ready status
             draw.text((40, 48), "READY", font=self.font, fill="white")
-        time.sleep(1)
+        time.sleep(3)
     
     def draw_status_bar(self, draw):
         """Status bar at top of screen"""
