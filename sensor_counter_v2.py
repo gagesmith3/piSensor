@@ -143,10 +143,10 @@ class SensorCounter:
         else:
             progress_percent = 0
         
-        # Progress bar dimensions
-        bar_x = 30
+        # Progress bar dimensions (moved left to make room for percentage)
+        bar_x = 15
         bar_y = 4
-        bar_width = 50
+        bar_width = 45
         bar_height = 5
         
         # Bar outline
@@ -161,13 +161,9 @@ class SensorCounter:
                               bar_x + 1 + fill_width, bar_y + bar_height - 1), 
                               fill="white")
         
-        # Percentage text (centered horizontally in status bar, next to bar)
+        # Percentage text (right of progress bar)
         percent_text = f"{progress_percent}%"
-        # Calculate text width (rough estimate: 8 pixels per character for default font)
-        text_width = len(percent_text) * 6
-        # Center the text horizontally on the screen
-        percent_x = 64 - (text_width // 2)
-        draw.text((percent_x, 3), percent_text, font=self.font, fill="white")
+        draw.text((bar_x + bar_width + 3, 3), percent_text, font=self.font, fill="white")
         
         # RIGHT: Header status (paused or running symbols)
         if self.counting_active:
@@ -187,16 +183,30 @@ class SensorCounter:
             # Status bar
             self.draw_status_bar(draw)
             
-            # Live count - large text in center
+            # Live count - dynamically scaled based on digit count
             count_str = str(self.live_count)
+            digit_count = len(count_str)
             
-            # Calculate centered position for 3x scaled text
+            # Dynamic scaling based on number of digits
+            # 1-3 digits: 3x scale (big)
+            # 4-5 digits: 2x scale (medium)
+            # 6+ digits: 1x scale (normal)
             char_width = 8
-            scale = 3
-            start_x = 64 - (len(count_str) * char_width * scale // 2)
-            start_y = 28
+            if digit_count <= 3:
+                scale = 3
+                start_y = 28
+            elif digit_count <= 5:
+                scale = 2
+                start_y = 32
+            else:
+                scale = 1
+                start_y = 35
             
-            # Draw large count
+            # Center the text horizontally
+            total_width = digit_count * char_width * scale
+            start_x = 64 - (total_width // 2)
+            
+            # Draw scaled count
             for i, char in enumerate(count_str):
                 x_pos = start_x + (i * char_width * scale)
                 for dy in range(scale):
