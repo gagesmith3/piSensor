@@ -135,9 +135,11 @@ class SensorCounter:
             draw.line((8, 4, 3, 9), fill="white")
         
         # CENTER: Progress bar with percentage
-        # Calculate progress (unconfirmed / live_count if exists, otherwise 0%)
-        if self.live_count > 0:
-            progress_percent = int((self.unconfirmed_total / self.live_count) * 100)
+        # Calculate progress (for testing: 1-10 count = 10-100%)
+        if self.live_count >= 10:
+            progress_percent = 100
+        elif self.live_count > 0:
+            progress_percent = self.live_count * 10
         else:
             progress_percent = 0
         
@@ -159,9 +161,13 @@ class SensorCounter:
                               bar_x + 1 + fill_width, bar_y + bar_height - 1), 
                               fill="white")
         
-        # Percentage text (small, right of bar)
+        # Percentage text (centered horizontally in status bar, next to bar)
         percent_text = f"{progress_percent}%"
-        draw.text((bar_x + bar_width + 3, 3), percent_text, font=self.font, fill="white")
+        # Calculate text width (rough estimate: 8 pixels per character for default font)
+        text_width = len(percent_text) * 6
+        # Center the text horizontally on the screen
+        percent_x = 64 - (text_width // 2)
+        draw.text((percent_x, 3), percent_text, font=self.font, fill="white")
         
         # RIGHT: Header status (paused or running symbols)
         if self.counting_active:
@@ -176,7 +182,7 @@ class SensorCounter:
         draw.line((0, 12, 127, 12), fill="white")
     
     def draw_main_screen(self):
-        """Main screen - live counter with unconfirmed total"""
+        """Main screen - live counter"""
         with canvas(self.device) as draw:
             # Status bar
             self.draw_status_bar(draw)
@@ -197,10 +203,6 @@ class SensorCounter:
                     for dx in range(scale):
                         draw.text((x_pos + dx, start_y + dy), char, 
                                 font=self.font, fill="white")
-            
-            # Unconfirmed total below
-            draw.text((20, 55), f"Unconfirmed: {self.unconfirmed_total}", 
-                     font=self.font, fill="white")
     
     def draw_settings_screen(self):
         """System settings screen"""
