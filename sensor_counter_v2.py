@@ -144,7 +144,7 @@ class SensorCounter:
             progress_percent = 0
         
         # Progress bar dimensions (moved left to make room for percentage)
-        bar_x = 50
+        bar_x = 25
         bar_y = 4
         bar_width = 45
         bar_height = 5
@@ -187,17 +187,14 @@ class SensorCounter:
             # Format number with commas (e.g., 1,234,567)
             count_formatted = f"{self.live_count:,}"
             
-            # Use normal font size - let commas make it readable
-            # Just draw it larger and centered
+            # Draw centered with normal font weight
             text_width = len(count_formatted) * 6  # Approximate width
             start_x = 64 - (text_width // 2)
-            start_y = 30
+            start_y = 32
             
-            # Draw the number 2x size for visibility
-            for dy in range(2):
-                for dx in range(2):
-                    draw.text((start_x + dx, start_y + dy), count_formatted, 
-                            font=self.font, fill="white")
+            # Draw once - clean, thin font
+            draw.text((start_x, start_y), count_formatted, 
+                     font=self.font, fill="white")
     
     def draw_settings_screen(self):
         """System settings screen"""
