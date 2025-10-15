@@ -423,14 +423,130 @@ class DisplayTest:
         with canvas(self.device) as draw:
             draw.rectangle(self.device.bounding_box, outline="black", fill="black")
     
+    def draw_rotating_weld_stud(self, draw, angle):
+        """Animated rotating weld stud for home screen"""
+        # Simplified 3D weld stud (compact version for corner)
+        center_x, center_y = 110, 12
+        
+        # Rotation matrix
+        cos_a = math.cos(angle)
+        sin_a = math.sin(angle)
+        
+        # Simple weld stud vertices (head, shaft, point)
+        vertices_3d = [
+            # Head (wider)
+            (-3, -1, -1), (3, -1, -1), (3, -1, 1), (-3, -1, 1),
+            (-3, 1, -1), (3, 1, -1), (3, 1, 1), (-3, 1, 1),
+            # Shaft
+            (-1.5, 1, -1), (1.5, 1, -1), (1.5, 1, 1), (-1.5, 1, 1),
+            (-1.5, 4, -1), (1.5, 4, -1), (1.5, 4, 1), (-1.5, 4, 1),
+        ]
+        
+        # Rotate and project
+        projected = []
+        for x, y, z in vertices_3d:
+            # Rotate around Y axis
+            rx = x * cos_a - z * sin_a
+            rz = x * sin_a + z * cos_a
+            # Simple perspective
+            scale = 1.5 / (1 + rz * 0.05)
+            sx = center_x + int(rx * scale)
+            sy = center_y + int(y * scale)
+            projected.append((sx, sy))
+        
+        # Draw edges (simplified wireframe)
+        edges = [(0,1),(1,2),(2,3),(3,0), (4,5),(5,6),(6,7),(7,4),
+                 (0,4),(1,5),(2,6),(3,7), (8,9),(9,10),(10,11),(11,8),
+                 (12,13),(13,14),(14,15),(15,12), (8,12),(9,13),(10,14),(11,15),
+                 (4,8),(5,9),(6,10),(7,11)]
+        
+        for i, j in edges:
+            if i < len(projected) and j < len(projected):
+                try:
+                    draw.line((projected[i][0], projected[i][1],
+                             projected[j][0], projected[j][1]), fill="white")
+                except:
+                    pass
+    
+    def draw_machine_mini_animation(self, draw, frame):
+        """Mini SP-21 punch animation for system info screen"""
+        # Compact version in top-right corner
+        base_x, base_y = 90, 8
+        
+        # Punch position (oscillates)
+        punch_pos = abs(math.sin(frame * 0.2))
+        
+        # Die
+        draw.rectangle((base_x + 10, base_y - 2, base_x + 14, base_y + 2), outline="white")
+        
+        # Punch (horizontal movement)
+        punch_x = base_x + int(8 * punch_pos)
+        draw.rectangle((punch_x, base_y - 1, punch_x + 6, base_y + 1), outline="white", fill="black")
+        
+        # Strike indicator
+        if punch_pos > 0.8:
+            draw.line((base_x + 12, base_y - 3, base_x + 12, base_y - 5), fill="white")
+            draw.line((base_x + 12, base_y + 3, base_x + 12, base_y + 5), fill="white")
+    
+    def draw_button_pulse(self, draw, frame, btn_name):
+        """Pulsing button indicator for button test screen"""
+        # Shows which button was last pressed with a pulse
+        positions = {
+            'KEY1': (100, 25), 'KEY2': (100, 37), 'KEY3': (100, 49),
+        }
+        
+        if btn_name in positions:
+            x, y = positions[btn_name]
+            pulse = abs(math.sin(frame * 0.3))
+            size = 2 + int(2 * pulse)
+            draw.ellipse((x - size, y - size, x + size, y + size), outline="white", fill="white")
+    
+    def draw_joystick_direction(self, draw, frame, direction):
+        """Animated joystick direction indicator"""
+        center_x, center_y = 110, 30
+        
+        # Pulsing arrow in direction
+        pulse = abs(math.sin(frame * 0.3))
+        offset = 8 + int(3 * pulse)
+        
+        if direction == 'UP':
+            draw.line((center_x, center_y - offset, center_x, center_y - offset - 5), fill="white", width=2)
+            draw.line((center_x, center_y - offset - 5, center_x - 2, center_y - offset - 3), fill="white")
+            draw.line((center_x, center_y - offset - 5, center_x + 2, center_y - offset - 3), fill="white")
+        elif direction == 'DOWN':
+            draw.line((center_x, center_y + offset, center_x, center_y + offset + 5), fill="white", width=2)
+            draw.line((center_x, center_y + offset + 5, center_x - 2, center_y + offset + 3), fill="white")
+            draw.line((center_x, center_y + offset + 5, center_x + 2, center_y + offset + 3), fill="white")
+        elif direction == 'LEFT':
+            draw.line((center_x - offset, center_y, center_x - offset - 5, center_y), fill="white", width=2)
+            draw.line((center_x - offset - 5, center_y, center_x - offset - 3, center_y - 2), fill="white")
+            draw.line((center_x - offset - 5, center_y, center_x - offset - 3, center_y + 2), fill="white")
+        elif direction == 'RIGHT':
+            draw.line((center_x + offset, center_y, center_x + offset + 5, center_y), fill="white", width=2)
+            draw.line((center_x + offset + 5, center_y, center_x + offset + 3, center_y - 2), fill="white")
+            draw.line((center_x + offset + 5, center_y, center_x + offset + 3, center_y + 2), fill="white")
+        elif direction == 'PRESS':
+            # Circle pulsing
+            radius = 3 + int(3 * pulse)
+            draw.ellipse((center_x - radius, center_y - radius,
+                         center_x + radius, center_y + radius), outline="white", fill="black")
+            draw.ellipse((center_x - 1, center_y - 1,
+                         center_x + 1, center_y + 1), fill="white")
+    
     def draw_screen_0(self):
+        """Home screen with rotating weld stud animation"""
         with canvas(self.device) as draw:
             draw.text((20, 5), "CONNECT", font=self.font, fill="white")
             draw.line((20, 20, 108, 20), fill="white", width=1)
             draw.text((15, 28), "Sacma SP-21", font=self.font, fill="white")
             draw.text((0, 45), "Use <- -> navigate", font=self.font, fill="white")
+            
+            # Animated rotating weld stud in corner
+            angle = time.time() * 2
+            self.draw_rotating_weld_stud(draw, angle)
     
     def draw_screen_1(self):
+        """System info screen with mini punch animation"""
         with canvas(self.device) as draw:
             draw.text((0, 0), "=== SYSTEM INFO ===", font=self.font, fill="white")
             import socket
@@ -445,8 +561,12 @@ class DisplayTest:
             draw.text((0, 28), f"Time: {datetime.now().strftime('%H:%M:%S')}", font=self.font, fill="white")
             draw.text((0, 41), f"Counter: {self.test_counter}", font=self.font, fill="white")
             draw.text((0, 54), f"Screen: {self.current_screen + 1}/4", font=self.font, fill="white")
+            
+            # Mini SP-21 punch animation
+            self.draw_machine_mini_animation(draw, time.time() * 10)
     
     def draw_screen_2(self):
+        """Button test screen with pulsing indicators"""
         with canvas(self.device) as draw:
             draw.text((0, 0), "=== BUTTON TEST ===", font=self.font, fill="white")
             draw.text((0, 12), f"Last: {self.last_button}", font=self.font, fill="white")
@@ -455,8 +575,13 @@ class DisplayTest:
                 count = self.button_presses[btn]
                 draw.text((0, y), f"{btn}: {count}", font=self.font, fill="white")
                 y += 12
+            
+            # Pulsing indicator for last pressed button
+            if self.last_button in ['KEY1', 'KEY2', 'KEY3']:
+                self.draw_button_pulse(draw, time.time() * 10, self.last_button)
     
     def draw_screen_3(self):
+        """Joystick test screen with direction animation"""
         with canvas(self.device) as draw:
             draw.text((0, 0), "== JOYSTICK TEST ==", font=self.font, fill="white")
             y = 12
@@ -464,6 +589,10 @@ class DisplayTest:
                 count = self.button_presses[btn]
                 draw.text((0, y), f"{btn}: {count}", font=self.font, fill="white")
                 y += 10
+            
+            # Animated direction indicator for last joystick input
+            if self.last_button in ['UP', 'DOWN', 'LEFT', 'RIGHT', 'PRESS']:
+                self.draw_joystick_direction(draw, time.time() * 10, self.last_button)
     
     def run_test(self):
         print("\n" + "="*60)
