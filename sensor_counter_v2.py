@@ -281,34 +281,70 @@ class SensorCounter:
     
     def show_load_screen(self):
         """Branded loading screen with Stud Sensor animation"""
-        # Frame 1: CONNECT / IWT Branding
-        with canvas(self.device) as draw:
-            draw.text((35, 15), "CONNECT", font=self.font, fill="white")
-            draw.line((30, 28, 98, 28), fill="white")
-            draw.text((10, 35), "IWT Stud Welding", font=self.font, fill="white")
-        time.sleep(3)
+        # Frame 1: CONNECT / IWT Branding with animated fade-in and progress bar
+        frames_1 = 75  # 3 seconds @ 0.04s per frame
+        for frame in range(frames_1):
+            progress = frame / frames_1
+            with canvas(self.device) as draw:
+                # Fade in text (show at different progress points)
+                if progress > 0.2:
+                    draw.text((35, 15), "CONNECT", font=self.font, fill="white")
+                
+                # Animated line grow from center
+                if progress > 0.4:
+                    line_progress = min(1.0, (progress - 0.4) / 0.3)
+                    center = 64
+                    half_width = int(34 * line_progress)
+                    draw.line((center - half_width, 28, center + half_width, 28), fill="white")
+                
+                # IWT text
+                if progress > 0.6:
+                    draw.text((10, 35), "IWT Stud Welding", font=self.font, fill="white")
+                
+                # Loading bar at bottom
+                if progress > 0.7:
+                    bar_progress = (progress - 0.7) / 0.3
+                    draw.rectangle((20, 52, 108, 58), outline="white", fill="black")
+                    bar_width = int(86 * bar_progress)
+                    if bar_width > 0:
+                        draw.rectangle((21, 53, 21 + bar_width, 57), fill="white")
+            
+            time.sleep(0.04)
         
         # Frame 2: STUD SENSOR with 3D Weld Stud Animation (3 seconds)
         weld_anim = WeldStudAnimation(self.device, self.font)
         weld_anim.animate_rotating_stud(frames=75)  # 75 frames @ 0.04s = 3 seconds
         
-        # Frame 3: Header Identification
-        with canvas(self.device) as draw:
-            # Stud Sensor branding
-            draw.text((25, 8), "STUD SENSOR", font=self.font, fill="white")
-            draw.line((20, 20, 108, 20), fill="white")
+        # Frame 3: Header Identification with animated reveal
+        frames_3 = 75  # 3 seconds @ 0.04s per frame
+        for frame in range(frames_3):
+            progress = frame / frames_3
+            with canvas(self.device) as draw:
+                # Stud Sensor branding (immediate)
+                draw.text((25, 8), "STUD SENSOR", font=self.font, fill="white")
+                
+                # Line grows from center
+                if progress > 0.2:
+                    line_progress = min(1.0, (progress - 0.2) / 0.3)
+                    center = 64
+                    half_width = int(44 * line_progress)
+                    draw.line((center - half_width, 20, center + half_width, 20), fill="white")
+                
+                # Header name (large) - appears after line
+                if progress > 0.5:
+                    header_width = len(self.header_name) * 6
+                    start_x = 64 - (header_width // 2)
+                    for dy in range(2):
+                        for dx in range(2):
+                            draw.text((start_x + dx, 28 + dy), self.header_name, 
+                                     font=self.font, fill="white")
+                
+                # Ready status - blinks at end
+                if progress > 0.7:
+                    if int(frame / 8) % 2 == 0:  # Blink effect
+                        draw.text((40, 48), "READY", font=self.font, fill="white")
             
-            # Header name (large)
-            header_width = len(self.header_name) * 6
-            start_x = 64 - (header_width // 2)
-            for dy in range(2):
-                for dx in range(2):
-                    draw.text((start_x + dx, 28 + dy), self.header_name, 
-                             font=self.font, fill="white")
-            
-            # Ready status
-            draw.text((40, 48), "READY", font=self.font, fill="white")
-        time.sleep(3)
+            time.sleep(0.04)
     
     def draw_status_bar(self, draw):
         """Status bar at top of screen"""
@@ -573,19 +609,41 @@ class SensorCounter:
             self.cleanup()
     
     def cleanup(self):
-        """Clean shutdown"""
+        """Clean shutdown with animation"""
         print("Shutting down...")
         
-        # Show exit screen
-        with canvas(self.device) as draw:
-            draw.rectangle((10, 20, 118, 45), outline="white", fill="black")
-            draw.text((35, 28), "CONNECT", font=self.font, fill="white")
-            draw.text((25, 38), "Shutdown...", font=self.font, fill="white")
-        time.sleep(1)
+        # Animated shutdown screen (1.5 seconds)
+        frames = 37  # ~1.5 seconds @ 0.04s per frame
+        for frame in range(frames):
+            progress = frame / frames
+            with canvas(self.device) as draw:
+                # Border box
+                draw.rectangle((10, 20, 118, 45), outline="white", fill="black")
+                
+                # Title
+                draw.text((22, 28), "STUD SENSOR", font=self.font, fill="white")
+                
+                # Shutting Down with animated dots
+                dots = "." * (int(frame / 8) % 4)
+                text = f"Shutting Down{dots}"
+                draw.text((15, 38), text, font=self.font, fill="white")
+                
+                # Progress bar at bottom of box
+                if progress > 0.2:
+                    bar_progress = (progress - 0.2) / 0.8
+                    bar_width = int(96 * bar_progress)
+                    draw.rectangle((16, 50, 112, 54), outline="white", fill="black")
+                    if bar_width > 0:
+                        draw.rectangle((17, 51, 17 + bar_width, 53), fill="white")
+            
+            time.sleep(0.04)
         
-        # Clear display
-        with canvas(self.device) as draw:
-            draw.rectangle(self.device.bounding_box, outline="black", fill="black")
+        # Clear display with fade effect
+        for i in range(3):
+            with canvas(self.device) as draw:
+                if i % 2 == 0:
+                    draw.rectangle(self.device.bounding_box, outline="black", fill="black")
+            time.sleep(0.1)
         
         # Cleanup GPIO
         GPIO.cleanup()
