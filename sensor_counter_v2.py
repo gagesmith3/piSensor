@@ -144,7 +144,7 @@ class SensorCounter:
             progress_percent = 0
         
         # Progress bar dimensions (moved left to make room for percentage)
-        bar_x = 15
+        bar_x = 20
         bar_y = 4
         bar_width = 45
         bar_height = 5
@@ -183,34 +183,40 @@ class SensorCounter:
             # Status bar
             self.draw_status_bar(draw)
             
-            # Live count - dynamically scaled based on digit count
+            # Live count - tall and narrow for readability
             count_str = str(self.live_count)
             digit_count = len(count_str)
             
-            # Dynamic scaling based on number of digits
-            # 1-3 digits: 3x scale (big)
-            # 4-5 digits: 2x scale (medium)
-            # 6+ digits: 1x scale (normal)
+            # Dynamic scaling: taller than wide for better readability
             char_width = 8
+            
             if digit_count <= 3:
-                scale = 3
-                start_y = 28
+                # 1-3 digits: 4x tall, 2x wide
+                x_scale = 2
+                y_scale = 4
+                start_y = 22
             elif digit_count <= 5:
-                scale = 2
-                start_y = 32
+                # 4-5 digits: 3x tall, 1x wide
+                x_scale = 1
+                y_scale = 3
+                start_y = 26
             else:
-                scale = 1
-                start_y = 35
+                # 6+ digits: 2x tall, 1x wide
+                x_scale = 1
+                y_scale = 2
+                start_y = 30
             
             # Center the text horizontally
-            total_width = digit_count * char_width * scale
+            total_width = digit_count * char_width * x_scale
             start_x = 64 - (total_width // 2)
             
-            # Draw scaled count
+            # Draw tall stretched count
             for i, char in enumerate(count_str):
-                x_pos = start_x + (i * char_width * scale)
-                for dy in range(scale):
-                    for dx in range(scale):
+                x_pos = start_x + (i * char_width * x_scale)
+                # Draw horizontally (x_scale times)
+                for dx in range(x_scale):
+                    # Draw vertically (y_scale times) - makes it tall
+                    for dy in range(y_scale):
                         draw.text((x_pos + dx, start_y + dy), char, 
                                 font=self.font, fill="white")
     
