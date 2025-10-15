@@ -27,7 +27,7 @@ try:
     from luma.core.interface.serial import spi
     from luma.core.render import canvas
     from luma.oled.device import sh1106
-    from PIL import ImageFont
+    from PIL import ImageFont, Image, ImageDraw
 except ImportError as e:
     print(f"Error importing required libraries: {e}")
     print("\nPlease install required packages:")
@@ -399,25 +399,26 @@ class SensorCounter:
             # Format number with commas (e.g., 1,234,567)
             count_formatted = f"{self.live_count:,}"
             
-            # Scale up the font size while keeping it thin
-            # Draw each character scaled by 3x
+            # Create a temporary image to draw text, then scale it up vertically
+            # This keeps the thin font but makes it taller/larger
+            temp_img = Image.new('1', (128, 64), 0)
+            temp_draw = ImageDraw.Draw(temp_img)
+            
+            # Draw the text normally (thin) on temp image
+            text_width = len(count_formatted) * 6
+            temp_x = 64 - (text_width // 2)
+            temp_draw.text((temp_x, 20), count_formatted, font=self.font, fill=1)
+            
+            # Now scale it up vertically by spacing pixels (thin scaling)
             scale = 3
-            char_width = 6 * scale
-            char_height = 8 * scale
-            
-            # Calculate starting position to center the text
-            total_width = len(count_formatted) * char_width
-            start_x = 64 - (total_width // 2)
-            start_y = 28
-            
-            # Draw each character of the number, scaled up
-            for i, char in enumerate(count_formatted):
-                char_x = start_x + (i * char_width)
-                # Draw the character scaled up by repeating pixels
-                for dy in range(scale):
-                    for dx in range(scale):
-                        draw.text((char_x + dx, start_y + dy), char, 
-                                 font=self.font, fill="white")
+            for y in range(64):
+                for x in range(128):
+                    if temp_img.getpixel((x, y)):
+                        # Draw scaled pixel (single pixel, spaced out vertically)
+                        scaled_x = x
+                        scaled_y = 13 + ((y - 20) * scale)
+                        if 0 <= scaled_y < 64:
+                            draw.point((scaled_x, scaled_y), fill="white")
     
     def draw_settings_screen(self):
         """System settings screen"""
