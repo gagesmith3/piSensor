@@ -78,18 +78,11 @@ class DisplayTest:
         
     def setup_buttons(self):
         """Setup GPIO pins for buttons and joystick"""
+        # Just set the mode - DON'T cleanup (like sensor.py does it)
         GPIO.setmode(GPIO.BCM)
-        
-        # First, cleanup any existing GPIO state
-        try:
-            GPIO.cleanup()
-            GPIO.setmode(GPIO.BCM)
-            print("✓ GPIO cleaned up")
-        except:
-            pass
+        print("✓ GPIO mode set to BCM")
         
         # Waveshare HAT pin mapping - these are the standard pins for the 1.3" HAT
-        # If these fail, you may need to adjust based on your specific HAT model
         pins = {
             KEY1_PIN: 'KEY1',
             KEY2_PIN: 'KEY2',
@@ -106,17 +99,8 @@ class DisplayTest:
         
         for pin, name in pins.items():
             try:
-                # Try to remove any existing event detection on this pin
-                try:
-                    GPIO.remove_event_detect(pin)
-                except:
-                    pass
-                
-                # Setup the pin
+                # Setup the pin (simple like sensor.py)
                 GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-                
-                # Small delay to let pin stabilize
-                time.sleep(0.01)
                 
                 # Add event detection
                 GPIO.add_event_detect(pin, GPIO.FALLING, 
@@ -128,26 +112,17 @@ class DisplayTest:
             except RuntimeError as e:
                 # Pin might be in use or conflicting
                 error_msg = str(e)
-                if "already" in error_msg.lower() or "edge" in error_msg.lower():
-                    print(f"⚠ {name} on GPIO {pin}: Pin already in use (try rebooting)")
-                else:
-                    print(f"⚠ Skipping {name} on GPIO {pin}: {error_msg}")
+                print(f"⚠ {name} on GPIO {pin}: {error_msg}")
                 failed_pins.append((pin, name))
             except Exception as e:
                 print(f"✗ Failed to setup {name} on GPIO {pin}: {e}")
                 failed_pins.append((pin, name))
         
-        if failed_pins:
-            print(f"\n⚠ Warning: {len(failed_pins)} buttons failed to initialize")
-            print("This is often normal - some pins may be used by the display SPI interface")
-            print(f"Working buttons: {len(successful_pins)}/{len(pins)}")
-            
-            if len(successful_pins) == 0:
-                print("\n✗ No buttons could be configured!")
-                print("Possible solutions:")
-                print("  1. Reboot the Pi: sudo reboot")
-                print("  2. Kill any Python processes: pkill -9 python")
-                print("  3. Check processes using GPIO: sudo lsof /dev/gpiomem")
+        print(f"\n✓ Configured {len(successful_pins)}/{len(pins)} buttons successfully")
+        
+        if len(successful_pins) == 0:
+            print("⚠ Warning: No buttons could be configured")
+            print("The test will continue in display-only mode")
         
         return len(successful_pins) > 0
     
