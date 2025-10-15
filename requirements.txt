@@ -1,0 +1,18 @@
+# Raspberry Pi Sensor System 2.0 - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Database connectivity
+mysql-connector-python==8.1.0
+
+# Task scheduling
+schedule==1.2.0
+
+# OLED display libraries
+luma.oled==3.12.0
+luma.core==2.4.2
+
+# Image processing
+Pillow==10.0.1
+
+# GPIO access (usually pre-installed on Raspberry Pi OS)
+# RPi.GPIO>=0.7.1
