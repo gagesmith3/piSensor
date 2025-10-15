@@ -132,19 +132,15 @@ class SensorCounter:
             draw.point((6, 7), fill="white")
         elif self.connection_status == "CONNECTING":
             # Connecting
-            draw.text((2, 2), "...", font=self.font, fill="white")
+            draw.text((2, 3), "...", font=self.font, fill="white")
         else:
             # Offline X
             draw.line((2, 3, 8, 9), fill="white")
             draw.line((8, 3, 2, 9), fill="white")
         
-        # Counting status (middle)
+        # Counting status (centered in bar)
         status_text = "COUNTING" if self.counting_active else "PAUSED"
-        draw.text((40, 2), status_text, font=self.font, fill="white")
-        
-        # Clock (right)
-        time_str = datetime.now().strftime('%H:%M')
-        draw.text((95, 2), time_str, font=self.font, fill="white")
+        draw.text((40, 3), status_text, font=self.font, fill="white")
         
         # Bottom border line
         draw.line((0, 12, 127, 12), fill="white")
@@ -179,12 +175,9 @@ class SensorCounter:
     def draw_settings_screen(self):
         """System settings screen"""
         with canvas(self.device) as draw:
-            # Status bar
-            self.draw_status_bar(draw)
-            
-            # Title
-            draw.text((5, 15), "SYSTEM SETTINGS", font=self.font, fill="white")
-            draw.line((0, 24, 127, 24), fill="white")
+            # Title (no status bar)
+            draw.text((5, 2), "SYSTEM SETTINGS", font=self.font, fill="white")
+            draw.line((0, 11, 127, 11), fill="white")
             
             # IP Address
             import socket
@@ -195,33 +188,30 @@ class SensorCounter:
                 s.close()
             except:
                 ip = "Not Connected"
-            draw.text((0, 27), f"IP: {ip}", font=self.font, fill="white")
+            draw.text((0, 15), f"IP: {ip}", font=self.font, fill="white")
             
             # Database status
             db_status = "CONNECTED" if self.db_connected else "DISCONNECTED"
-            draw.text((0, 37), f"DB: {db_status}", font=self.font, fill="white")
+            draw.text((0, 27), f"DB: {db_status}", font=self.font, fill="white")
             
             # Header name
-            draw.text((0, 47), f"Header: {self.header_name}", font=self.font, fill="white")
+            draw.text((0, 39), f"Header: {self.header_name}", font=self.font, fill="white")
             
             # Sensor GPIO
-            draw.text((0, 57), "Sensor: GPIO 17", font=self.font, fill="white")
+            draw.text((0, 51), "Sensor: GPIO 17", font=self.font, fill="white")
     
     def draw_controls_screen(self):
         """Header controls screen"""
         with canvas(self.device) as draw:
-            # Status bar
-            self.draw_status_bar(draw)
-            
-            # Title
-            draw.text((10, 15), "HEADER CONTROLS", font=self.font, fill="white")
-            draw.line((0, 24, 127, 24), fill="white")
+            # Title (no status bar)
+            draw.text((10, 2), "HEADER CONTROLS", font=self.font, fill="white")
+            draw.line((0, 11, 127, 11), fill="white")
             
             # Control options
-            draw.text((0, 28), "UP/DOWN: Adjust", font=self.font, fill="white")
-            draw.text((0, 38), "KEY1: Toggle Count", font=self.font, fill="white")
-            draw.text((0, 48), "KEY2: Confirm", font=self.font, fill="white")
-            draw.text((0, 58), "KEY3: Reset", font=self.font, fill="white")
+            draw.text((0, 16), "UP/DOWN: Adjust", font=self.font, fill="white")
+            draw.text((0, 28), "KEY1: Toggle Count", font=self.font, fill="white")
+            draw.text((0, 40), "KEY2: Confirm", font=self.font, fill="white")
+            draw.text((0, 52), "KEY3: Reset", font=self.font, fill="white")
     
     def draw_exit_screen(self):
         """Exit confirmation screen"""
