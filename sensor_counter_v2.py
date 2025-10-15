@@ -281,18 +281,25 @@ class SensorCounter:
     
     def show_load_screen(self):
         """Branded loading screen with Stud Sensor animation"""
-        # Frame 1: CONNECT / IWT Branding (centered, no animations)
+        # Frame 1: CONNECT / IWT Branding with animated divider
         frames_1 = 75  # 3 seconds @ 0.04s per frame
         for frame in range(frames_1):
+            progress = frame / frames_1
             with canvas(self.device) as draw:
-                # CONNECT (centered)
-                draw.text((35, 18), "CONNECT", font=self.font, fill="white")
+                # CONNECT text (fade in early)
+                if progress > 0.2:
+                    draw.text((35, 18), "CONNECT", font=self.font, fill="white")
                 
-                # Divider line (centered)
-                draw.line((30, 30, 98, 30), fill="white")
+                # Animated divider line grows from center
+                if progress > 0.4:
+                    line_progress = min(1.0, (progress - 0.4) / 0.3)
+                    center = 64
+                    half_width = int(34 * line_progress)
+                    draw.line((center - half_width, 30, center + half_width, 30), fill="white")
                 
-                # IWT Stud Welding (centered)
-                draw.text((10, 38), "IWT Stud Welding", font=self.font, fill="white")
+                # IWT Stud Welding text (appears after line)
+                if progress > 0.6:
+                    draw.text((10, 38), "IWT Stud Welding", font=self.font, fill="white")
             
             time.sleep(0.04)
         
