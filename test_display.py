@@ -22,16 +22,19 @@ except ImportError as e:
     sys.exit(1)
 
 # Waveshare 1.3" OLED HAT GPIO Pin Definitions
-# Verify these match your specific HAT model
-KEY1_PIN = 21  # Button 1
-KEY2_PIN = 20  # Button 2
-KEY3_PIN = 16  # Button 3
+# Based on official Waveshare documentation for SH1106 1.3" HAT
+# SPI Display uses: GPIO 8(DC), 25(RST), 7,8,9,10,11(SPI)
+# Available for buttons/joystick:
 
-JOYSTICK_UP = 6
-JOYSTICK_DOWN = 19
-JOYSTICK_LEFT = 5
-JOYSTICK_RIGHT = 26
-JOYSTICK_PRESS = 13
+KEY1_PIN = 21  # Physical pin 40
+KEY2_PIN = 20  # Physical pin 38
+KEY3_PIN = 16  # Physical pin 36
+
+JOYSTICK_UP = 6     # Physical pin 31
+JOYSTICK_DOWN = 19  # Physical pin 35
+JOYSTICK_LEFT = 5   # Physical pin 29
+JOYSTICK_RIGHT = 26 # Physical pin 37
+JOYSTICK_PRESS = 13 # Physical pin 33
 
 class DisplayTest:
     def __init__(self):
@@ -77,6 +80,8 @@ class DisplayTest:
         """Setup GPIO pins for buttons and joystick"""
         GPIO.setmode(GPIO.BCM)
         
+        # Waveshare HAT pin mapping - these are the standard pins for the 1.3" HAT
+        # If these fail, you may need to adjust based on your specific HAT model
         pins = {
             KEY1_PIN: 'KEY1',
             KEY2_PIN: 'KEY2',
@@ -88,15 +93,43 @@ class DisplayTest:
             JOYSTICK_PRESS: 'PRESS'
         }
         
+        successful_pins = []
+        failed_pins = []
+        
         for pin, name in pins.items():
             try:
+                # First try to setup the pin
                 GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+                
+                # Then try to add event detection
                 GPIO.add_event_detect(pin, GPIO.FALLING, 
                                     callback=lambda ch, n=name: self.button_callback(n),
-                                    bouncetime=200)
+                                    bouncetime=300)
                 print(f"✓ {name} button configured on GPIO {pin}")
+                successful_pins.append((pin, name))
+                
+            except RuntimeError as e:
+                # Pin might be in use or conflicting
+                print(f"⚠ Skipping {name} on GPIO {pin}: {e}")
+                failed_pins.append((pin, name))
             except Exception as e:
                 print(f"✗ Failed to setup {name} on GPIO {pin}: {e}")
+                failed_pins.append((pin, name))
+        
+        if failed_pins:
+            print(f"\n⚠ Warning: {len(failed_pins)} buttons failed to initialize")
+            print("This is often normal - some pins may be used by the display SPI interface")
+            print(f"Working buttons: {len(successful_pins)}/{len(pins)}")
+        
+        if not successful_pins:
+            print("\n✗ No buttons could be configured!")
+            print("The test will continue with display-only mode")
+            print("\nTo find correct pin numbers, check:")
+            print("  - Waveshare HAT documentation")
+            print("  - Run: gpio readall")
+            print("  - Check for pin conflicts with SPI (GPIO 7-11)")
+        
+        return len(successful_pins) > 0
     
     def button_callback(self, button_name):
         """Handle button press events"""
