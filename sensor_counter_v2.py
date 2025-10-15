@@ -124,23 +124,53 @@ class SensorCounter:
         # Top bar border (12 pixels tall)
         draw.rectangle((0, 0, 127, 12), outline="white", fill="black")
         
-        # Connection status icon (left)
-        if self.connection_status == "ONLINE":
-            # WiFi icon
-            draw.arc((2, 3, 10, 9), 0, 180, fill="white")
-            draw.arc((4, 4, 8, 8), 0, 180, fill="white")
-            draw.point((6, 7), fill="white")
-        elif self.connection_status == "CONNECTING":
-            # Connecting
-            draw.text((2, 3), "...", font=self.font, fill="white")
+        # LEFT: Connection status (checkmark or X)
+        if self.connection_status == "ONLINE" or self.db_connected:
+            # Checkmark
+            draw.line((3, 6, 5, 8), fill="white", width=1)
+            draw.line((5, 8, 9, 4), fill="white", width=1)
         else:
-            # Offline X
-            draw.line((2, 3, 8, 9), fill="white")
-            draw.line((8, 3, 2, 9), fill="white")
+            # X symbol
+            draw.line((3, 4, 8, 9), fill="white")
+            draw.line((8, 4, 3, 9), fill="white")
         
-        # Counting status (centered in bar)
-        status_text = "COUNTING" if self.counting_active else "PAUSED"
-        draw.text((40, 3), status_text, font=self.font, fill="white")
+        # CENTER: Progress bar with percentage
+        # Calculate progress (unconfirmed / live_count if exists, otherwise 0%)
+        if self.live_count > 0:
+            progress_percent = int((self.unconfirmed_total / self.live_count) * 100)
+        else:
+            progress_percent = 0
+        
+        # Progress bar dimensions
+        bar_x = 30
+        bar_y = 4
+        bar_width = 50
+        bar_height = 5
+        
+        # Bar outline
+        draw.rectangle((bar_x, bar_y, bar_x + bar_width, bar_y + bar_height), 
+                      outline="white", fill="black")
+        
+        # Filled portion
+        if progress_percent > 0:
+            fill_width = int((bar_width - 2) * (progress_percent / 100))
+            if fill_width > 0:
+                draw.rectangle((bar_x + 1, bar_y + 1, 
+                              bar_x + 1 + fill_width, bar_y + bar_height - 1), 
+                              fill="white")
+        
+        # Percentage text (small, right of bar)
+        percent_text = f"{progress_percent}%"
+        draw.text((bar_x + bar_width + 3, 3), percent_text, font=self.font, fill="white")
+        
+        # RIGHT: Header status (paused or running symbols)
+        if self.counting_active:
+            # Running symbol (triangle play button)
+            draw.polygon([(115, 4), (115, 9), (121, 6.5)], fill="white", outline="white")
+        else:
+            # Paused symbol (two vertical bars)
+            draw.rectangle((115, 4, 117, 9), fill="white")
+            draw.rectangle((119, 4, 121, 9), fill="white")
         
         # Bottom border line
         draw.line((0, 12, 127, 12), fill="white")
