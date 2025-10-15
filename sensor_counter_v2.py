@@ -293,8 +293,8 @@ class SensorCounter:
             self.counter_font = None
             for font_path in font_paths:
                 try:
-                    # Load at larger size for direct rendering (no scaling needed)
-                    self.counter_font = ImageFont.truetype(font_path, 24)
+                    # Load at larger size for direct rendering (bigger = 36)
+                    self.counter_font = ImageFont.truetype(font_path, 36)
                     print(f"✓ Loaded TrueType counter font: {font_path}")
                     break
                 except:
