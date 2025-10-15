@@ -1,8 +1,20 @@
 #!/usr/bin/env python3
 """
-CONNECT - Sensor Counter v2.0
-Clean production interface for Sacma SP-21 heading machine
-No animations - pure functionality
+CONNECT ERP - Header Counter Module v2.0
+
+Part of the CONNECT ERP System for IWT Stud Welding
+Deployed to 11 heading machines for real-time production tracking
+
+Hardware: Raspberry Pi Zero W2 with Waveshare 1.3" OLED HAT
+Purpose: Count studs produced by heading machines and sync data to CONNECT ERP
+Features: 
+- Real-time counter display with physical screen control
+- Database synchronization with CONNECT ERP system
+- Status monitoring and production tracking
+- Manual counter adjustment via buttons
+
+IWT Stud Welding - Production Counter
+Version 2.0 - October 2025
 """
 
 import time
@@ -112,12 +124,55 @@ class SensorCounter:
             self.font = None
     
     def show_load_screen(self):
-        """Simple loading screen"""
+        """Branded loading screen with animation"""
+        # Frame 1: CONNECT ERP branding
         with canvas(self.device) as draw:
-            draw.text((35, 15), "CONNECT", font=self.font, fill="white")
-            draw.text((15, 30), "Sensor Counter", font=self.font, fill="white")
-            draw.text((45, 45), "v2.0", font=self.font, fill="white")
-        time.sleep(2)
+            # CONNECT title (centered)
+            draw.text((35, 20), "CONNECT", font=self.font, fill="white")
+            # Subtitle
+            draw.text((15, 35), "ERP System v2.0", font=self.font, fill="white")
+        time.sleep(1)
+        
+        # Frame 2: IWT Stud Welding branding
+        with canvas(self.device) as draw:
+            # Company name
+            draw.text((10, 15), "IWT Stud Welding", font=self.font, fill="white")
+            # Module type
+            draw.text((15, 30), "Header Counter", font=self.font, fill="white")
+            # Animated loading bar
+            draw.rectangle((20, 45, 107, 50), outline="white", fill="black")
+            draw.rectangle((22, 47, 52, 48), fill="white")  # 1/3 filled
+        time.sleep(0.5)
+        
+        # Frame 3: Loading progress
+        with canvas(self.device) as draw:
+            draw.text((10, 15), "IWT Stud Welding", font=self.font, fill="white")
+            draw.text((15, 30), "Header Counter", font=self.font, fill="white")
+            draw.rectangle((20, 45, 107, 50), outline="white", fill="black")
+            draw.rectangle((22, 47, 82, 48), fill="white")  # 2/3 filled
+        time.sleep(0.5)
+        
+        # Frame 4: Ready
+        with canvas(self.device) as draw:
+            draw.text((10, 15), "IWT Stud Welding", font=self.font, fill="white")
+            draw.text((15, 30), "Header Counter", font=self.font, fill="white")
+            draw.rectangle((20, 45, 107, 50), outline="white", fill="black")
+            draw.rectangle((22, 47, 105, 48), fill="white")  # Full
+        time.sleep(0.3)
+        
+        # Frame 5: Header identification
+        with canvas(self.device) as draw:
+            # Header name (large)
+            header_width = len(self.header_name) * 6
+            start_x = 64 - (header_width // 2)
+            # Draw header name slightly larger for emphasis
+            for dy in range(2):
+                for dx in range(2):
+                    draw.text((start_x + dx, 20 + dy), self.header_name, 
+                             font=self.font, fill="white")
+            # Ready indicator
+            draw.text((40, 40), "READY", font=self.font, fill="white")
+        time.sleep(1)
     
     def draw_status_bar(self, draw):
         """Status bar at top of screen"""
@@ -199,9 +254,16 @@ class SensorCounter:
     def draw_settings_screen(self):
         """System settings screen"""
         with canvas(self.device) as draw:
-            # Title (no status bar)
-            draw.text((5, 2), "SYSTEM SETTINGS", font=self.font, fill="white")
+            # Title with CONNECT branding
+            draw.text((2, 2), "CONNECT | SETTINGS", font=self.font, fill="white")
             draw.line((0, 11, 127, 11), fill="white")
+            
+            # Header identification (most important)
+            draw.text((0, 15), f"Header: {self.header_name}", font=self.font, fill="white")
+            
+            # Database connection to CONNECT ERP
+            db_status = "ONLINE" if self.db_connected else "OFFLINE"
+            draw.text((0, 27), f"ERP Link: {db_status}", font=self.font, fill="white")
             
             # IP Address
             import socket
@@ -211,17 +273,10 @@ class SensorCounter:
                 ip = s.getsockname()[0]
                 s.close()
             except:
-                ip = "Not Connected"
-            draw.text((0, 15), f"IP: {ip}", font=self.font, fill="white")
+                ip = "No Network"
+            draw.text((0, 39), f"IP: {ip}", font=self.font, fill="white")
             
-            # Database status
-            db_status = "CONNECTED" if self.db_connected else "DISCONNECTED"
-            draw.text((0, 27), f"DB: {db_status}", font=self.font, fill="white")
-            
-            # Header name
-            draw.text((0, 39), f"Header: {self.header_name}", font=self.font, fill="white")
-            
-            # Sensor GPIO
+            # Sensor status
             draw.text((0, 51), "Sensor: GPIO 17", font=self.font, fill="white")
     
     def draw_controls_screen(self):
