@@ -1,0 +1,32 @@
+#!/bin/bash
+echo "=== GPIO Permission Diagnostic ==="
+echo ""
+echo "1. Current user:"
+whoami
+echo ""
+echo "2. User groups:"
+groups
+echo ""
+echo "3. /dev/gpiomem permissions:"
+ls -l /dev/gpiomem
+echo ""
+echo "4. /dev/gpiochip* permissions:"
+ls -l /dev/gpiochip* 2>/dev/null || echo "No gpiochip devices found"
+echo ""
+echo "5. GPIO sysfs (legacy):"
+ls -ld /sys/class/gpio 2>/dev/null || echo "GPIO sysfs not available"
+echo ""
+echo "6. libgpiod installed?"
+which gpioinfo || echo "libgpiod tools not installed"
+echo ""
+echo "7. Kernel modules:"
+lsmod | grep gpio
+echo ""
+echo "=== Recommended Actions ==="
+echo "If you see permission issues above, run:"
+echo "  sudo usermod -a -G gpio \$USER"
+echo "  sudo reboot"
+echo ""
+echo "If gpiochip devices don't exist or have wrong permissions:"
+echo "  sudo apt install -y libgpiod2"
+echo "  sudo reboot"
