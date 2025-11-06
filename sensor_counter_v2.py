@@ -268,7 +268,7 @@ class SensorCounter:
         try:
             serial = spi(device=0, port=0, bus_speed_hz=8000000, 
                         dc_pin=DC_PIN, rst_pin=RST_PIN)
-            self.device = sh1106(serial, rotate=2)
+            self.device = sh1106(serial, rotate=2)  # 180 degree flip
             print(f"✓ Display initialized: {self.device.width}x{self.device.height}")
         except Exception as e:
             print(f"✗ Display init failed: {e}")
