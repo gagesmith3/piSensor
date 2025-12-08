@@ -1,4 +1,5 @@
 # Environment and configuration files with credentials
+.env
 .env.local
 .env.*.local
 
