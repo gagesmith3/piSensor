@@ -186,37 +186,39 @@ class SensorState:
                     logger.critical(f"Database unreachable for {self.sync_failures} attempts!")
                 return False
         
-        # Only sync if we have counts to report
-        if self.count == 0:
-            logger.debug("No counts to sync")
-            return True
-        
         try:
             cursor = self.db_connection.cursor()
             
             # Get current IP address
             pi_ip = self.get_local_ip()
             
-            # Insert count record
-            insert_query = """
-                INSERT INTO heading_rates 
-                (headName, studCount, updateFullDate, updateDate, updateHour, updateMinute) 
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """
-            values = (
-                self.head_name,
-                self.count,
-                now,
-                now.strftime("%x"),
-                now.hour,
-                now.minute
-            )
-            cursor.execute(insert_query, values)
+            # Insert count record (only if we have counts)
+            if self.count > 0:
+                insert_query = """
+                    INSERT INTO heading_rates 
+                    (headName, studCount, updateFullDate, updateDate, updateHour, updateMinute) 
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """
+                values = (
+                    self.head_name,
+                    self.count,
+                    now,
+                    now.strftime("%x"),
+                    now.hour,
+                    now.minute
+                )
+                cursor.execute(insert_query, values)
+                
+                # Update count timestamp when we have counts
+                count_update = "UPDATE heading_data SET lastCountUpdate = %s WHERE headID = %s"
+                cursor.execute(count_update, (now, self.head_id))
             
-            # Update machine status and IP address
+            # Update machine status, IP address, and heartbeat timestamp (always)
             status = 'ACTIVE' if self.count > 0 else 'INACTIVE'
-            update_query = "UPDATE heading_data SET headStatus = %s, headerIP = %s WHERE headID = %s"
-            cursor.execute(update_query, (status, pi_ip, self.head_id))
+            update_query = """UPDATE heading_data 
+                             SET headStatus = %s, headerIP = %s, lastHeartbeat = %s 
+                             WHERE headID = %s"""
+            cursor.execute(update_query, (status, pi_ip, now, self.head_id))
             
             cursor.close()
             
@@ -226,7 +228,10 @@ class SensorState:
             self.last_sync_time = now
             self.sync_failures = 0
             
-            logger.info(f"✓ Synced {logged_count} counts at {now.strftime('%H:%M:%S')} (IP: {pi_ip})")
+            if logged_count > 0:
+                logger.info(f"✓ Synced {logged_count} counts at {now.strftime('%H:%M:%S')} (IP: {pi_ip})")
+            else:
+                logger.debug(f"✓ Heartbeat update at {now.strftime('%H:%M:%S')} (IP: {pi_ip})")
             return True
             
         except MySQLError as e:
