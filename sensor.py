@@ -44,10 +44,10 @@ CONFIG = {
     'sync_interval_minutes': int(os.getenv('SYNC_INTERVAL', '1')),
 }
 
-#============================================================================
+# ============================================================================
 # LOGGING SETUP
 # ============================================================================
-LOG_DIR = Path('/var/log/sensor') if Path('/var/log').exists() else Path.home() / 'sensor_logs'
+LOG_DIR = Path(__file__).parent / 'logs'
 LOG_DIR.mkdir(exist_ok=True)
 
 logger = logging.getLogger('SensorCounter')
