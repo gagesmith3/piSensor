@@ -208,10 +208,6 @@ class SensorState:
                     now.minute
                 )
                 cursor.execute(insert_query, values)
-                
-                # Update count timestamp when we have counts
-                count_update = "UPDATE heading_data SET lastCountUpdate = %s WHERE headID = %s"
-                cursor.execute(count_update, (now, self.head_id))
             
             # Update machine status, IP address, and heartbeat timestamp (always)
             status = 'ACTIVE' if self.count > 0 else 'INACTIVE'
