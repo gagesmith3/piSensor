@@ -29,10 +29,10 @@ except ImportError:
 # ============================================================================
 CONFIG = {
     'sensor_pin': int(os.getenv('SENSOR_PIN', '17')),
-    #'head_name': os.getenv('HEAD_NAME', 'NATIONAL_1'),
-    #'head_id': int(os.getenv('HEAD_ID', '1')),
+    'head_name': os.getenv('HEAD_NAME', 'HEADNAME'),
+    'head_id': int(os.getenv('HEAD_ID', '0')),
     'database': {
-        'host': os.getenv('DB_HOST', '192.168.1.54'),
+        'host': os.getenv('DB_HOST', '192.168.1.6'),
         'user': os.getenv('DB_USER', 'webapp'),
         'password': os.getenv('DB_PASS', 'STUDS2650'),
         'database': os.getenv('DB_NAME', 'iwt_db'),
