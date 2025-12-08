@@ -6,6 +6,27 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env"
 ENV_EXAMPLE="$SCRIPT_DIR/.env.example"
+VENV_DIR="$SCRIPT_DIR/venv"
+
+echo "========================================="
+echo "  piSensor Setup"
+echo "========================================="
+echo ""
+
+# Create virtual environment if it doesn't exist
+if [ ! -d "$VENV_DIR" ]; then
+    echo "Creating Python virtual environment..."
+    python3 -m venv "$VENV_DIR"
+    echo "✓ Virtual environment created"
+else
+    echo "✓ Virtual environment already exists"
+fi
+
+# Activate virtual environment
+echo "Activating virtual environment..."
+source "$VENV_DIR/bin/activate"
+echo "✓ Virtual environment activated"
+echo ""
 
 # Check if .env exists
 if [ ! -f "$ENV_FILE" ]; then
@@ -17,7 +38,7 @@ if [ ! -f "$ENV_FILE" ]; then
         echo "  - HEAD_ID: Your heading ID"
         echo "  - SENSOR_PIN: GPIO pin number if different from 17"
         echo ""
-        echo "Then run: python3 sensor.py"
+        echo "Edit with: nano .env"
     else
         echo "✗ .env.example not found!"
         exit 1
@@ -26,13 +47,24 @@ else
     echo "✓ .env already exists"
 fi
 
-# Check if required Python packages are installed
+# Install/upgrade pip
 echo ""
-echo "Checking Python dependencies..."
-python3 -m pip install -q -r requirements.txt 2>/dev/null || {
-    echo "Installing Python requirements..."
-    python3 -m pip install -r requirements.txt
-}
+echo "Updating pip..."
+pip install -q --upgrade pip
+
+# Install required Python packages
+echo "Installing Python dependencies..."
+pip install -r requirements.txt
 
 echo ""
-echo "✓ Setup complete! You can now run: python3 sensor.py"
+echo "========================================="
+echo "✓ Setup complete!"
+echo "========================================="
+echo ""
+echo "Next steps:"
+echo "1. Edit your configuration: nano .env"
+echo "2. Run the sensor: python3 sensor.py"
+echo ""
+echo "To activate the virtual environment in the future:"
+echo "  source venv/bin/activate"
+
