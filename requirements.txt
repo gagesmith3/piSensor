@@ -1,11 +1,10 @@
 # Raspberry Pi Sensor System 2.0 - Python Dependencies
 # Install with: pip install -r requirements.txt
 
-# Database connectivity
+# Core dependencies
 mysql-connector-python==8.1.0
-
-# Task scheduling
 schedule==1.2.0
+python-dotenv==1.0.0
 
 # SPI interface (required for OLED display)
 spidev==3.6
