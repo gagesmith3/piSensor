@@ -161,12 +161,15 @@ class DatabaseManager:
     def upload_count_data(self, head_name: str, count: int) -> bool:
         """Upload count data to heading_rates table"""
         now = datetime.datetime.now()
+        # updateDate was dropped from the schema. It stored a locale MM/DD/YY
+        # string that sorted lexically rather than by date, and it was fully
+        # derivable from updateFullDate anyway.
         query = """
-            INSERT INTO heading_rates 
-            (headName, studCount, updateFullDate, updateDate, updateHour, updateMinute) 
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO heading_rates
+            (headName, studCount, updateFullDate, updateHour, updateMinute)
+            VALUES (%s, %s, %s, %s, %s)
         """
-        params = (head_name, count, now, now.strftime("%x"), now.hour, now.minute)
+        params = (head_name, count, now, now.hour, now.minute)
         
         result = self.execute_query(query, params)
         return result is not None

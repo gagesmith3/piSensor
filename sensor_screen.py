@@ -312,16 +312,18 @@ class SensorState:
             
             # Insert count record (only if we have counts)
             if self.count > 0:
+                # updateDate was dropped from the schema. It stored a locale
+                # MM/DD/YY string that sorted lexically rather than by date,
+                # and it was fully derivable from updateFullDate anyway.
                 insert_query = """
-                    INSERT INTO heading_rates 
-                    (headName, studCount, updateFullDate, updateDate, updateHour, updateMinute) 
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    INSERT INTO heading_rates
+                    (headName, studCount, updateFullDate, updateHour, updateMinute)
+                    VALUES (%s, %s, %s, %s, %s)
                 """
                 values = (
                     self.head_name,
                     self.count,
                     now,
-                    now.strftime("%x"),
                     now.hour,
                     now.minute
                 )
