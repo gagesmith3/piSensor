@@ -2,7 +2,7 @@
 # Install with: pip install -r requirements.txt
 
 # Core dependencies
-mysql-connector-python==8.1.0
+# (The Connect API client, connect_client.py, uses the standard library only.)
 schedule==1.2.0
 python-dotenv==1.0.0
 

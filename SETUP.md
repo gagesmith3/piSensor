@@ -26,14 +26,12 @@ nano .env
 |----------|---------|-------------|
 | `SENSOR_PIN` | `17` | GPIO pin for inductive sensor (BCM) |
 | `HEAD_NAME` | `NATIONAL_1` | Machine identifier |
-| `HEAD_ID` | `1` | Database machine ID |
-| `DB_HOST` | `192.168.1.54` | MySQL server address |
-| `DB_USER` | `webapp` | Database user |
-| `DB_PASS` | `STUDS2650` | Database password |
-| `DB_NAME` | `iwt_db` | Database name |
+| `HEAD_ID` | `1` | `heading_data.headID` - the header this Pi reports as |
+| `API_URL` | `http://192.168.1.6:9090/api/v1` | connectCoreAPI base URL |
+| `DEVICE_TOKEN` | *(issued per header)* | This header's token - `bin/issue-header-token.php <HEAD_ID>` on the Connect server. A credential: never commit it |
 | `WORK_START` | `7` | Work day start hour (24-hour) |
 | `WORK_END` | `17` | Work day end hour (24-hour) |
-| `SYNC_INTERVAL` | `1` | Minutes between database syncs |
+| `SYNC_INTERVAL` | `1` | Minutes between reports to Connect |
 | `LOG_LEVEL` | `INFO` | Logging verbosity |
 
 ### 3. Test the Sensor
@@ -43,12 +41,12 @@ python3 sensor.py
 
 # You should see:
 # ============================================================
-# IWT Stud Sensor v3.2 Starting
+# IWT Stud Sensor v4.0 Starting (reports through the Connect API)
 # ============================================================
 # ✓ GPIO initialized on pin 17
-# ✓ Database connected to 192.168.1.54
-# ✓ Startup initialization complete
+# Reporting to http://192.168.1.6:9090/api/v1
 # Entering detection loop...
+# ✓ Synced 64 counts in 1 readings (1 new, 0 already had)   <- once a minute
 ```
 
 ### 4. Deploy as systemd Service
@@ -58,7 +56,7 @@ Create `/etc/systemd/system/stud-sensor.service`:
 ```ini
 [Unit]
 Description=IWT Stud Sensor Counter
-After=network.target mysql.service
+After=network-online.target
 Wants=network-online.target
 
 [Service]
@@ -100,16 +98,20 @@ tail -f /var/log/sensor/sensor.log
 # Search for errors
 grep ERROR /var/log/sensor/sensor.log
 
-# View connection history
-grep "Database" /var/log/sensor/sensor.log
+# View report history
+grep -E "Synced|Connect" /var/log/sensor/sensor.log
 ```
 
 ## Troubleshooting
 
-### Issue: "Database connection failed"
-- Check network connectivity: `ping 192.168.1.54`
-- Verify credentials in `.env`
-- Check MySQL is running: `mysql -h 192.168.1.54 -u webapp -p`
+### Issue: "Connect unreachable"
+- Check network connectivity: `ping 192.168.1.6`
+- Check the API answers: `curl http://192.168.1.6:9090/api/v1/health`
+- Counts are buffered in `buffer.db` and sent once it is back
+
+### Issue: "Connect refused the device token"
+- `DEVICE_TOKEN` in `.env` is missing, mistyped, or was replaced by a newer one
+- Issue a new one for this `HEAD_ID` on the Connect server and put it in `.env`
 
 ### Issue: "GPIO initialization failed"
 - Verify GPIO pin is correct in `.env`
@@ -134,30 +136,30 @@ grep "Database" /var/log/sensor/sensor.log
 - [ ] Logs accessible at `/var/log/sensor/sensor.log`
 - [ ] systemd service created and enabled
 - [ ] Service restarts on boot
-- [ ] Can reach database from Pi
+- [ ] Can reach the Connect API from the Pi (`curl $API_URL/health`)
 - [ ] GPIO permissions set up correctly
-- [ ] Database tables exist (heading_rates, heading_data)
+- [ ] `DEVICE_TOKEN` issued for this header and set in `.env`
 
 ## Environment Variable Override
 
 You can override `.env` settings via command line:
 
 ```bash
-DB_HOST=192.168.1.100 python3 sensor.py
+API_URL=http://192.168.1.100:9090/api/v1 python3 sensor.py
 ```
 
 Or in systemd service, add to `[Service]` section:
 ```ini
-Environment="DB_HOST=192.168.1.100"
+Environment="API_URL=http://192.168.1.100:9090/api/v1"
 ```
 
 ## Security Notes
 
-⚠️ **Never commit `.env` to git** - it contains database credentials
+⚠️ **Never commit `.env` to git** - it contains this header's device token
 - Use `.env.example` as template
 - Add `.env` to `.gitignore` (already done)
 - For git repositories, use environment variables in CI/CD systems
-- Rotate database password periodically
+- A leaked token is revoked by issuing a new one for that header
 
 ## Uninstall
 

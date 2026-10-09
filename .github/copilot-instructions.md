@@ -2,11 +2,11 @@
 
 ## System Role
 - `piSensor` is the heading-side edge ingestion service for inductive count data and sensor heartbeat.
-- Its job is to capture reliable machine-floor signals and write them into the database with minimal business interpretation.
+- Its job is to capture reliable machine-floor signals and report them to connectCoreAPI with minimal business interpretation.
 
 ## Production Context
-- Main runtime is currently `sensor.py` unless a task explicitly targets one of the alternate variants.
-- The service writes heading counts and related health data into `iwt_db` tables used by downstream dashboards and compute jobs.
+- Main runtime is `sensor.py` (root crontab `@reboot`); `sensor_screen.py` is the OLED variant. Both report through `connect_client.py`.
+- Since v4 (2026-10-09) the service never touches the database: it posts counts and heartbeats to `POST /api/v1/heading/headers/{HEAD_ID}/telemetry` with its device token, and the API writes the `iwt_db` tables (`heading_rates`, `heading_data`) that downstream dashboards and compute jobs read. Counts wait in a local SQLite buffer until the API acknowledges them.
 
 ## Connected Projects
 - `htdocs` defines much of the current heading business meaning and dashboard behavior.
@@ -15,6 +15,7 @@
 - `connectBot` should use API responses rather than raw sensor tables.
 
 ## Working Rules
-- Keep GPIO capture, count logging, reconnection behavior, and heartbeat logic reliable and simple.
+- Keep GPIO capture, count buffering, reporting, and heartbeat logic reliable and simple.
+- Never add a database connection or credential back: a change the sensor needs on the server is an API change in connectCoreAPI.
 - Avoid embedding reporting logic in the edge service.
 - When changing table writes or timing behavior, note downstream effects on compute, API, and dashboard consumers.
